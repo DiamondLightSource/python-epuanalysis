@@ -28,6 +28,7 @@
 import os
 import platform
 import tkinter as tk
+import sys
 from tkinter import *
 from tkinter import ttk
 #from tkinter import filedialog
@@ -53,7 +54,7 @@ def popSquares():
     sqlist.delete(0,tk.END)
     ## Populate square list box
     try:
-        f = open('.squares_all.dat')
+        f = open('./EPU_analysis/.squares_all.dat')
         task_list = f.readlines()
         for item in task_list:
             sqlist.insert(tk.END, item)
@@ -63,7 +64,7 @@ def popSquares():
         print('Previous analysis not found')
     ## Print useful information in label
     #Number of Square images
-    wc = file_len('.squares_all.dat')
+    wc = file_len('./EPU_analysis/.squares_all.dat')
     lbl = Label(main_frame, text='Number of Squares: '+str(wc)+'  ')
     lbl.grid(sticky="w",column=2, row=12)
 
@@ -123,6 +124,7 @@ def popConditional():
 def SquareSelect(evt):
     value=str(sqlist.get(sqlist.curselection()))
     imgpath = value.rstrip()
+    print("111",imgpath)
     #Define global variable for use outside def, Square
     global squarepath
     squarepath = imgpath
@@ -253,12 +255,13 @@ def MicSelect(evt):
     clearPickNo()
     partLines = []
     global star
-    for line in open(star[1]):
+    #for line in open(star[1]):
+    for line in open("EPU_analysis/star/.mainDataLines.dat"):
         if os.path.splitext(name)[0] in line:
             partLines.append(line)
             partNo = len(partLines)
             lbl = Label(main_frame, text="  "+str(partNo))
-            lbl.grid(sticky="e",column=8, row=17)
+            lbl.grid(sticky="W",column=8, row=17)
     #Plot particles?
     if pick_state.get() == 1:
         plotPicks()
@@ -302,8 +305,9 @@ def plotPicks():
     print("Plotting particles for micrograph "+mic)
     print(star)
     print(mic)
-    subprocess.call('epu.plot_coords.sh '+str(star[1])+' '+str(mic)+' '+str(entryMicX.get())+' '+str(entryMicY.get())+' '+str(entryPartD.get())+' y', shell=True)
-    os.rename('particles.png', './EPU_analysis/particles.png')
+    #subprocess.call('epu.plot_coords.sh '+str(star[1])+' '+str(mic)+' '+str(entryMicX.get())+' '+str(entryMicY.get())+' '+str(entryPartD.get())+' y', shell=True)
+    #os.rename('particles.png', './EPU_analysis/particles.png')
+    subprocess.call('epu.plot_coords_v2.sh -i '+str(star[1])+' -m '+str(mic)+' -x '+str(entryMicX.get())+' -y '+str(entryMicY.get())+' -d '+str(entryPartD.get())+' -s y -o EPU_analysis/star/', shell=True)
     #Call  global variable from def FoilHole
     global micpath
     print(micpath)
@@ -312,7 +316,7 @@ def plotPicks():
     micLoad = RBGAImage(imgpath)
     micLoad = micLoad.resize((400,400), Image.ANTIALIAS)
     ## Particle pick overlay
-    parLoad = RBGAImage("./EPU_analysis/particles.png")
+    parLoad = RBGAImage("./EPU_analysis/star/particles.png")
     parLoad = parLoad.resize((400,400), Image.ANTIALIAS)
     micLoad.paste(parLoad, (0, 0), parLoad)
     parRender = ImageTk.PhotoImage(micLoad)
@@ -330,8 +334,8 @@ def plotFoilHole():
 
 def clearPickNo():
     #Clear part picks report
-    lbl = Label(main_frame, text="     ")
-    lbl.grid(sticky="e",column=8, row=17)
+    lbl = Label(main_frame, text="         ")
+    lbl.grid(sticky="W",column=8, row=17)
 
 def clearMicSel():
     ## Clear Mic list box
@@ -392,9 +396,9 @@ lbl = Label(main_frame, text="Show all FoilHoles or only FoilHoles with particle
 lbl.grid(column=4, row=row)
 row += 1
 
-rad1 = Radiobutton(main_frame,text='All', indicatoron = 0, value='.squares_all.dat', command=radioClickSq, variable = radioSq).grid(sticky="w", column=2, row=row)
-rad2 = Radiobutton(main_frame,text='Used', indicatoron = 0, value='.squares_used.dat', command=radioClickSq, variable = radioSq).grid(sticky="", column=2, row=row)
-rad3 = Radiobutton(main_frame,text='Not used', indicatoron = 0, value='.squares_not.dat', command=radioClickSq, variable = radioSq).grid(sticky="e", column=2, row=row)
+rad1 = Radiobutton(main_frame,text='All', indicatoron = 0, value='./EPU_analysis/.squares_all.dat', command=radioClickSq, variable = radioSq).grid(sticky="w", column=2, row=row)
+rad2 = Radiobutton(main_frame,text='Used', indicatoron = 0, value='./EPU_analysis/.squares_used.dat', command=radioClickSq, variable = radioSq).grid(sticky="", column=2, row=row)
+rad3 = Radiobutton(main_frame,text='Not used', indicatoron = 0, value='./EPU_analysis/.squares_not.dat', command=radioClickSq, variable = radioSq).grid(sticky="e", column=2, row=row)
 
 rad4 = Radiobutton(main_frame,text='All', indicatoron = 0, value='foilAll', command=radioClickFoil, variable = radioFoil).grid(sticky="w", column=4, row=row)
 rad5 = Radiobutton(main_frame,text='Used', indicatoron = 0, value='foilUsed', command=radioClickFoil, variable = radioFoil).grid(sticky="", column=4, row=row)
@@ -433,7 +437,7 @@ entryPartD.insert(0, "150")
 
 values = ["K2","K3","FII","FIII","Other"]
 combo = ttk.Combobox(main_frame, values=values, width=10)
-combo.current(1)
+combo.current(4)
 combo.grid(column=8, row=22)
 combo.bind("<<ComboboxSelected>>", detectorSelect)
 
@@ -478,7 +482,7 @@ column += 2
 popSquares()
 
 ## Square image
-sqLoad = Image.open(str(exedir)+"/data/testSq.jpg")
+sqLoad = Image.open(str(exedir)+"/data/testSq.jpeg")
 sqLoad = sqLoad.resize((400,400), Image.ANTIALIAS)
 sqRender = ImageTk.PhotoImage(sqLoad)
 imgSq = Label(main_frame, image=sqRender)
@@ -492,7 +496,7 @@ entrySq = tk.Entry(main_frame,width=45, state='normal')
 entrySq.grid(column=2, row=11, sticky=W)
 
 ## FoilHole image
-fhLoad = RBGAImage(str(exedir)+"/data/testFoil.jpg")
+fhLoad = RBGAImage(str(exedir)+"/data/testFoil.jpeg")
 fhLoad = fhLoad.resize((400,400), Image.ANTIALIAS)
 fhRender = ImageTk.PhotoImage(fhLoad)
 imgFoil = Label(main_frame, image=fhRender)
@@ -506,7 +510,7 @@ entryFoil = tk.Entry(main_frame,width=45, state='normal')
 entryFoil.grid(column=4, row=11, sticky=W)
 
 ## Micrograph image
-micLoad = RBGAImage(str(exedir)+"/data/testMic.jpg")
+micLoad = RBGAImage(str(exedir)+"/data/testMic.jpeg")
 micLoad = micLoad.resize((400,400), Image.ANTIALIAS)
 micRender = ImageTk.PhotoImage(micLoad)
 imgMic = Label(main_frame, image=micRender)

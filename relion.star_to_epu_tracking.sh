@@ -106,22 +106,26 @@ echo "Number of unique entries in star file: ${lines}"
 echo ''
 
 ################################################################################
-# Find all squares
+# Find all squares and their associated square images
 ################################################################################
 
-# Get all square images using find in epu directory
-find ${epu}/Images-Disc1/ -maxdepth 1 -mindepth 1 -type d -printf '%f\n'  > .${columnname}_mics_sq_all.dat
+# Get all square images using find in epu directory, ignores file path with basename
+find ${epu}/Images-Disc1 -maxdepth 1 -mindepth 1 -type d  -exec basename {} \; > .${columnname}_mics_sq_all.dat
 sqnoall=$(wc -l .${columnname}_mics_sq_all.dat | awk '{print $1}')
 
-# Get the image name for that square
+# Get the image name for that square, excludes file path
 ## NOTE AGAIN that multiple gridsquare images are sometimes found and the last (tail -n 1) is taken, this could be a problem!!!
 while read p ; do
-  img=$(find ${epu}/Images-Disc1/${p} -maxdepth 1 -mindepth 1 -type f -printf '%f\n' | grep jpg | grep ^GridSquare | tail -n 1)
-  sed -i "s/${p}/${p},${img}/g" .${columnname}_mics_sq_all.dat
+  img=$(find ${epu}/Images-Disc1/${p} -maxdepth 1 -mindepth 1 -type f -exec basename {} \; | grep jpg | grep ^GridSquare | tail -n 1)
+  q=$(echo "${p},${img}")
+  # To work on both Linux (GNU) and OS (BSD) have to manually write out files
+  sed "s/${p}/${q}/g" .${columnname}_mics_sq_all.dat > .sed.tmp && mv .sed.tmp .${columnname}_mics_sq_all.dat
 done < .${columnname}_mics_sq_all.dat
 
 ################################################################################
-# Find used squares
+# Find used squares -
+# Reduce particle star file to unique micrographs
+# Search and find which square those micrographs come from
 ################################################################################
 
 #Get unique FoilHole reference and then column for where GridSquare name is in file path
@@ -130,6 +134,7 @@ foilRef=$(echo $p | awk -F'_' '{print $2}')
 col=$(find ${epu} -name *${foilRef}* | grep "GridSquare" | awk -F"/" '{for(i=1;i<=NF;i++){if ($i ~ /GridSquare/){print i}}}' | uniq -d)
 
 echo '' > .${columnname}_mics_sq_used.dat
+
 i=1
 #Read lines of unique entires and find the grid square images for these
 while read p ; do
@@ -145,6 +150,16 @@ while read p ; do
   i=$((i+1))
   clearLastLine
 done < .${columnname}_mics.dat
+
+#echo '' > test.dat
+
+#i=1
+#for f in $(cat .${columnname}_mics.dat); do
+  #echo $i
+  #gridRef=$(echo $f | awk -F"_" 'NR==1{print $2}')
+  #find ${epu} -name "*${gridRef}*jpg" -type f | awk -F"/" -v col=$col 'NR==1{print $col}' >> test.dat
+  #i=$((i+1))
+#done
 
 #Find the unique GridSquare references and report
 cat .${columnname}_mics_sq_used.dat | uniq -d > .tmp.dat
@@ -265,7 +280,7 @@ mv tmp.dat .${columnname}_mics_sq_used.dat
 while read p ; do
   gridSq=$(echo ${p} | awk -F',' '{print $1}')
   img=$(grep ${gridSq} .${columnname}_mics_sq_all.dat)
-  sed -i "s/${p}/${img}/g" .${columnname}_mics_sq_used.dat
+  sed "s/${p}/${img}/g" .${columnname}_mics_sq_used.dat > .sed.tmp && mv .sed.tmp .${columnname}_mics_sq_used.dat
 done < .${columnname}_mics_sq_used.dat
 
 sqnoused=$(wc -l .${columnname}_mics_sq_used.dat | awk '{print $1}')

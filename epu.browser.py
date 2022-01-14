@@ -76,39 +76,56 @@ def run():
     column = entrycolumn.get()
     suffix = entrysuffix.get()
     # Run shell script
-    subprocess.call('relion.star_to_epu_tracking.sh -i '+star+' -e '+epu+' -s '+suffix+' -c '+column, shell=True)
+    subprocess.call('relion.star_to_epu_tracking_v2.sh -i '+star+' -e '+epu+' -s '+suffix+' -c '+column, shell=True)
     popAnalysisFields()
 
 def popAnalysisFields():
     ## Get data if analysis already performed
     try:
         f = open('./EPU_analysis/settings.dat')
-        print('Populating fields with previous paths')
+        print('Populating fields with previous analysis')
         clearAnalysis()
         for line in f:
-         if "Total" in line:
-           total = line.strip().split()
-         if "Used" in line:
-           used = line.strip().split()
-         if "Not" in line:
-           notused = line.strip().split()
+            print(line)
+            if "Total:" in line:
+                total = line.strip().split()
+            if "Used:" in line:
+                used = line.strip().split()
+            if "Not:" in line:
+                notused = line.strip().split()
         f.close()
     ## Populate fields with defaults if analysis not performed
     except IOError:
         print('Previous analysis not found')
+        total = "T0"
+        used = "U0"
+        notused = "N0"
+    #Fill varibales if no value found
+    try:
+        total
+    except NameError:
+        total = "00"
+    try:
+        used
+    except NameError:
+        used = "00"
+    try:
+        notused
+    except NameError:
+        notused = "00"
     #Fill fields if analysis already performed
     try:
         entryTotal.insert(0, total[1])
         entryUsed.insert(0, used[1])
         entryNotUsed.insert(0, notused[1])
     except IndexError:
-        print('Data not present, although oreviosu analysis performed...')
+        print('Data not present, although previous analysis performed...')
 
 def popPathFields():
     ## Populate fields if analysis already performed
     try:
         f = open('./EPU_analysis/settings.dat')
-        print('Populating fields with previous analysis')
+        print('Populating fields with previous paths')
         clearPaths()
         for line in f:
          if "Star" in line:

@@ -1,0 +1,57 @@
+https://realpython.com/python-xml-parser/
+
+Exposure xml:
+/Users/vtn87135/Dropbox/-WORK/eBIC/Science/Collaborations/Rueda/20210806_krios_3_data_collection/bubble_em/data/nt21004-559/EPU/EPU_analysis/squares_used/GridSquare_20210806_123453_Data/FoilHole_5862071_Data_5860229_5860231_20210806_123912.xml
+
+Squares xml:
+/Users/vtn87135/Dropbox/-WORK/eBIC/Science/Collaborations/Rueda/20210806_krios_3_data_collection/bubble_em/data/nt21004-559/EPU/EPU_analysis/squares_used/GridSquare_20210806_123453.xml
+
+import xml.etree.ElementTree as ET
+
+# Read xml
+doc = ET.parse("/Users/vtn87135/Dropbox/-WORK/eBIC/Science/Collaborations/Rueda/20210806_krios_3_data_collection/bubble_em/data/nt21004-559/EPU/EPU_analysis/squares_used/GridSquare_20210806_123453_Data/FoilHole_5862071_Data_5860229_5860231_20210806_123912.xml")
+
+# Show roots of xml
+root = doc.getroot()
+
+# Show element's children
+for child in root:
+	print(child.tag)
+
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}name
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}uniqueID
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}CustomData
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}IntensityScale
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}ReferenceTransformation
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}SpatialScale
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}microscopeData
+
+# Get element in a root and pull out tag and text
+element = root[2]
+element.tag
+element.text
+
+	'{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}uniqueID'
+	'da37c902-e74e-4370-8fe1-e4b8f1037a39'
+
+# Get descendants in element
+for descendant in root.iter():
+	print(descendant.tag)
+
+# Get a specific descendant in an element
+tag_name = "{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}BeamDiameter"
+for descendant in root.iter(tag_name):
+	print(descendant)
+
+	<Element '{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}BeamDiameter' at 0x7f94e80c4400>
+
+# Get the tag and text in an element
+tag_name = "{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}BeamDiameter"
+for descendant in root.iter(tag_name):
+	print(descendant.tag, "=", descendant.text)
+
+	{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}GunLens = 4
+
+
+
+tag_name = "{http://schemas.datacontract.org/2004/07/Fei.SharedObjects}CustomData"
