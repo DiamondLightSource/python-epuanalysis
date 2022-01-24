@@ -43,7 +43,7 @@ ns['g'] = 'http://schemas.datacontract.org/2004/07/System.Collections.Generic'
 ns['s'] = 'http://schemas.datacontract.org/2004/07/Fei.Applications.Common.Services'
 ns['a'] = 'http://schemas.datacontract.org/2004/07/System.Drawing'
 
-# Find beam diameter in xml file
+# Find parameters in xml file
 beamDiameter = root.find('so:microscopeData/so:optics/so:BeamDiameter', ns).text
 stagePositionA = root.find('so:microscopeData/so:stage/so:Position/so:A', ns).text
 stagePositionB = root.find('so:microscopeData/so:stage/so:Position/so:B', ns).text
@@ -52,15 +52,27 @@ stagePositionY = root.find('so:microscopeData/so:stage/so:Position/so:Y', ns).te
 stagePositionZ = root.find('so:microscopeData/so:stage/so:Position/so:Z', ns).text
 pixelSize = root.find('so:SpatialScale/so:pixelSize/so:x/so:numericValue', ns).text
 
-#filterSlit = root.find('so:microscopeData/so:EnergyFilter/so:EnergySelectionSlitWidth', ns).text
+#beamShiftX = root.find('so:microscopeData/so:optics/so:BeamShift/so:_x', ns).text
+#beamShiftY = root.find('so:microscopeData/so:optics/so:BeamShift/so:_y', ns).text
+
+filterSlit = root.find('so:microscopeData/so:optics/so:EnergyFilter/so:EnergySelectionSlitWidth', ns).text
+defocus = root.find('so:microscopeData/so:optics/so:Defocus', ns).text
+beamD = root.find('so:microscopeData/so:optics/so:BeamDiameter', ns).text
 
 micronPix = float(pixelSize)*1e6
 micronX = float(stagePositionX)*1e6
 micronY = float(stagePositionY)*1e6
+micronDF = float(defocus)*1e6
+micronBeamD = float(beamD)*1e9
 
+print('Filter width: '+str(filterSlit)+' microns')
+
+print('micronPix: '+str(micronPix))
 print('stagePosX: '+str(micronX))
 print('stagePosY: '+str(micronY))
 
-print('micronPix: '+str(micronPix))
+#print('BeamShiftX: '+str(beamShiftX))
+#print('BeamShiftY: '+str(beamShiftY))
+print('Beam diameter: '+str(micronBeamD)+' nanometres')
 
-#print('Filter width: '+str(filterSlit))
+print('Defocus: '+str(micronDF)+' microns')

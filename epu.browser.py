@@ -4,6 +4,7 @@
 ############################################################################
 #
 # Author: "Kyle L. Morris"
+# eBIC Diamond Light Source 2022
 # MRC London Institute of Medical Sciences 2019
 #
 # This program is free software: you can redistribute it and/or modify
@@ -75,8 +76,25 @@ def run():
     epu = entryepu.get()
     column = entrycolumn.get()
     suffix = entrysuffix.get()
+    # If entries empty then fill with none
+    if epu == "":
+        entryepu.insert(0, 'None')
+    if star == "":
+        entrystar.insert(0, 'None')
+        star = "None"
+    if column == "":
+        entrycolumn.insert(0, 'None')
+        column = "None"
+    if suffix == "":
+        entrysuffix.insert(0, 'None')
+        suffix = "None"
     # Run shell script
-    subprocess.call('relion.star_to_epu_tracking_v2.sh -i '+star+' -e '+epu+' -s '+suffix+' -c '+column, shell=True)
+    if star == "None":
+        print('Using epu.epu_tracking.sh')
+        subprocess.call('epu.epu_tracking.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
+    else:
+        print('Using epu.star_to_epu_tracking.sh')
+        subprocess.call('epu.star_to_epu_tracking_v2.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
     popAnalysisFields()
 
 def popAnalysisFields():
@@ -143,10 +161,10 @@ def popPathFields():
         entrysuffix.insert(0, suffix[1])
     except IOError:
         print('Previous analysis not found')
-        entrystar.insert(0, "[Enter star file]")
-        entryepu.insert(0, "[Enter epu dir]")
-        entrycolumn.insert(0, "[Enter Relion star file column name]")
-        entrysuffix.insert(0, "[Enter suffix added to mic name by particle extraction]")
+        #entrystar.insert(0, "[Enter star file]")
+        #entryepu.insert(0, "[Enter epu dir]")
+        #entrycolumn.insert(0, "[Enter Relion star file column name]")
+        #entrysuffix.insert(0, "[Enter suffix added to mic name by particle extraction]")
 
 def open_file(path):
     if platform.system() == "Windows":
@@ -183,18 +201,18 @@ main_frame.geometry('650x300')
 row = 0
 ## Text and button entry
 row += 1
-entry_star = tk.StringVar()
-entrystar = tk.Entry(main_frame, width=40,textvariable=entry_star)
-entrystar.grid(column=1, row=row)
-buttonstar = tk.Button(main_frame, text="Browse star", command=browsestar)
-buttonstar.grid(column=0, row=row)
-#entrystar.pack(side=tk.LEFT)
-row += 1
 entry_epu = tk.StringVar()
 entryepu = tk.Entry(main_frame, width=40,textvariable=entry_epu)
 entryepu.grid(column=1, row=row)
 buttonepu = tk.Button(main_frame, text="Browse epu", command=browseepu)
 buttonepu.grid(column=0, row=row)
+#entrystar.pack(side=tk.LEFT)
+row += 1
+entry_star = tk.StringVar()
+entrystar = tk.Entry(main_frame, width=40,textvariable=entry_star)
+entrystar.grid(column=1, row=row)
+buttonstar = tk.Button(main_frame, text="Browse star", command=browsestar)
+buttonstar.grid(column=0, row=row)
 row += 1
 entry_column = tk.StringVar()
 entrycolumn = tk.Entry(main_frame, width=40,textvariable=entry_column)

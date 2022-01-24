@@ -4,6 +4,7 @@
 ############################################################################
 #
 # Author: "Kyle L. Morris"
+# eBIC Diamond Light Source 2022
 # MRC London Institute of Medical Sciences 2019
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,6 +41,19 @@ from PIL import ImageTk, Image
 import glob
 
 ###############################################################################
+
+def inspectXml():
+    # Write the current micrograph to a file for reading by xml inspection gui
+    # This is not the right way, pass over as variable properly
+    # https://www.code4example.com/python/tkinter/tkinter-passing-variables-between-windows/
+    value = str(miclist.get(miclist.curselection()))
+    imgpath = value.rstrip()
+    print(imgpath)
+    file = open(".micrograph.dat", "w")
+    file.write(imgpath + "\n")
+    file.close()
+    # Open the xml inspection GUI
+    os.system('epu.xml_inspector.py')
 
 def file_len(fname):
     p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE,
@@ -307,7 +321,7 @@ def plotPicks():
     print(mic)
     #subprocess.call('epu.plot_coords.sh '+str(star[1])+' '+str(mic)+' '+str(entryMicX.get())+' '+str(entryMicY.get())+' '+str(entryPartD.get())+' y', shell=True)
     #os.rename('particles.png', './EPU_analysis/particles.png')
-    subprocess.call('epu.plot_coords_v2.sh -i '+str(star[1])+' -m '+str(mic)+' -x '+str(entryMicX.get())+' -y '+str(entryMicY.get())+' -d '+str(entryPartD.get())+' -s y -o EPU_analysis/star/', shell=True)
+    subprocess.call('epu.plot_coords_v2.sh -i '+str(star[1])+' -m '+str(mic)+' -x '+str(entryMicX.get())+' -y '+str(entryMicY.get())+' -d '+str(entryPartD.get())+' -s y -f y -o EPU_analysis/star/', shell=True)
     #Call  global variable from def FoilHole
     global micpath
     print(micpath)
@@ -440,6 +454,9 @@ combo = ttk.Combobox(main_frame, values=values, width=10)
 combo.current(4)
 combo.grid(column=8, row=22)
 combo.bind("<<ComboboxSelected>>", detectorSelect)
+
+buttonXml = tk.Button(main_frame, text="Inspect xml", command=inspectXml)
+buttonXml.grid(column=8, row=23)
 
 #btn = tk.Button(main_frame,text='Plot picks', command = plotPicks).grid(sticky="e", column=8, row=16)
 row += 1

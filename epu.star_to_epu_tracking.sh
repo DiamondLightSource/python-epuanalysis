@@ -4,6 +4,7 @@
 ############################################################################
 #
 # Author: "Kyle L. Morris"
+# eBIC Diamond Light Source 2022
 # MRC London Institute of Medical Sciences 2019
 #
 # This program is free software: you can redistribute it and/or modify

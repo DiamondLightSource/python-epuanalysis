@@ -4,6 +4,7 @@
 ############################################################################
 #
 # Author: "Kyle L. Morris"
+# eBIC Diamond Light Source 2022
 # MRC London Institute of Medical Sciences 2019
 #
 # This program is free software: you can redistribute it and/or modify
@@ -69,7 +70,6 @@ mkdir -p EPU_analysis
 # Out files settings
 settings='./EPU_analysis/settings.dat'
 EPU_OUT='./EPU_analysis'
-EPU_dir="${EPU_OUT}/EPU_structure.dat"
 star_dir='./EPU_analysis/star'
 
 # Remove any existing analysis
@@ -92,7 +92,7 @@ echo "Column: ${columnname}" >> ${settings}
 echo "Suffix: ${suffix}" >> ${settings}
 
 ################################################################################
-# Parse input star file (dependent on bashEM github) and assumingn > relion 3
+# Parse input star file (dependent on bashEM github) and assuming > relion 3
 ################################################################################
 
 # Process relion 3 star file
@@ -126,7 +126,7 @@ echo ''
 ################################################################################
 
 # Get all square images using find in epu directory, ignores file path with basename
-find ${epu}/Images-Disc1 -maxdepth 1 -mindepth 1 -type d  -exec basename {} \; > ${EPU_OUT}/squares_all.dat
+find ${epu}/* -maxdepth 1 -mindepth 1 -type d | awk -F"/" '{print $NF}' | sort > ${EPU_OUT}/squares_all.dat
 sqnoall=$(wc -l ${EPU_OUT}/squares_all.dat | awk '{print $1}')
 
 # Get the image name for that square, excludes file path
@@ -146,14 +146,14 @@ done < ${EPU_OUT}/squares_all.dat
 # Search and find which square unique micrographs come from
 ################################################################################
 
-#Create a file detailing directory structure file for all square, foil, exposures
-find ${epu} -name "*jpg" > $EPU_dir
+#Create a file detailing entire EPU directory structure file for all square, foil, exposures
+find ${epu}/* -name "*.jpg" > "${EPU_OUT}/EPU_structure.dat"
 
 #Get unique micrograph reference and then column for where GridSquare reference is in file path
 #Get a micrograph name
 p=$(sed -n 2p ${columnname}_mics.dat)
 #Find that micrograph in the directory structure
-q=$(grep ${p} $EPU_dir)
+q=$(grep ${p} "${EPU_OUT}/EPU_structure.dat")
 #Find the GridSquare for that micrograph and the column number in the file path
 col=$(echo $q | grep "GridSquare" | awk -F"/" '{for(i=1;i<=NF;i++){if ($i ~ /GridSquare/){print i}}}')
 #foilRef=$(echo $p | awk -F'_' '{print $2}')
@@ -171,11 +171,11 @@ while read p ; do
   foilRef=$(echo $p | awk -F'_' '{print $2}')
 
   #Get GridSquare names
-  grep ${p} $EPU_dir | awk -F"/" -v col=$col '{print $col}' >> ${EPU_OUT}/squares_used.dat
+  grep ${p} "${EPU_OUT}/EPU_structure.dat" | awk -F"/" -v col=$col '{print $col}' >> ${EPU_OUT}/squares_used.dat
 
   i=$((i+1))
   clearLastLine
-done < ${columnname}_mics.dat
+done < ${EPU_OUT}/${columnname}_mics.dat
 
 #Remove white space from *_mics_sq_used.dat data file
 sed '1d' ${EPU_OUT}/squares_used.dat > .sed.tmp && mv .sed.tmp ${EPU_OUT}/squares_used.dat
@@ -229,7 +229,7 @@ while read p ; do
   echo -e "Finding used GridSquare images: ${i}/${sqnoused}"
 
   # Copy square image from EPU directory to local for inspection, note use of ls to deal with multiple squares images
-  dir=$(find ${epu} -name ${p} | grep Images)
+  dir=$(find ${epu}/* -name ${p} | grep Images)
 
   file=$(ls -tlrd $dir/*jpg | tail -n 1 | awk '{print $NF}')
   ln -s $file ./EPU_analysis/squares_used
@@ -293,11 +293,11 @@ while read p ; do
   # GridSquare reference is different to the GridSquare image name thus
   # Locate the GridSquare image and its name, note use of awk
   j=$(echo ${p} | awk -F',' '{print $1}')
-  dir=$(find ${epu} -name ${j} | grep Images)
+  dir=$(find ${epu}/* -name ${j} | grep Images)
 
   # sometimes there's more than one square image.... take the last/most recent... this needs investigation as to whether appropriate
-  k=$(ls -ltr $dir/*.xml | tail -n 1 | awk '{print $NF}')
-  imname=$(basename $k .xml)
+  k=$(ls -ltr $dir/*.jpg | tail -n 1 | awk '{print $NF}')
+  imname=$(basename $k .jpg)
 
   echo "Working on ${imname}"
   # Make a directory for this GridSquare image name
