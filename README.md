@@ -3,7 +3,9 @@
 ## Quick start
 
 Open the EPU browser
+```bash
 $ epu.browser.py
+```
 
 Browse and select a star file from a Relion refinement
 
@@ -26,7 +28,7 @@ This will open a new window in whcih you can interactively explore what the micr
 
 ## Demo
 
-Watch the video EPU_browser.mp4 for a quick visual representation of what you might expect to find. Note this is performed on a subset of data in a Relion star file for speed.
+Watch the video EPU\_browser.mp4 for a quick visual representation of what you might expect to find. Note this is performed on a subset of data in a Relion star file for speed.
 
 ## Description
 
@@ -40,4 +42,4 @@ This framework can find and display square images that led to productive 3D reco
 
 ## FAQ
 
-Please watch the short movie 'EPU_browser.mp4' to familiarise yourself with the functionality of this software.
+Please watch the short movie 'EPU\_browser.mp4' to familiarise yourself with the functionality of this software.
