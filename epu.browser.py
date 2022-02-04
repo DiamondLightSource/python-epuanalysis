@@ -34,28 +34,37 @@ from pathlib import Path
 
 ###############################################################################
 
-#Defines buttons
+# Defines buttons
 def browsestar():
     # Browse to file
-    main_frame.filename =  filedialog.askopenfilename(initialdir = "~",title = "Select file",filetypes = (("all files","*.*"),("star files","*.star")))
+    main_frame.filename = filedialog.askopenfilename(
+        initialdir="~",
+        title="Select file",
+        filetypes=(("all files", "*.*"), ("star files", "*.star")),
+    )
     starin = main_frame.filename
     # delete content from position 0 to end
     entrystar.delete(0, tk.END)
     # insert new_text at position 0
     entrystar.insert(0, starin)
 
+
 def browseepu():
     # Browse to dir
-    main_frame.filename =  filedialog.askdirectory(initialdir = "~",title = "Select directory")
+    main_frame.filename = filedialog.askdirectory(
+        initialdir="~", title="Select directory"
+    )
     epuin = main_frame.filename
     # delete content from position 0 to end
     entryepu.delete(0, tk.END)
     # insert new_text at position 0
     entryepu.insert(0, epuin)
 
+
 def clearAll():
     clearAnalysis()
     clearPaths()
+
 
 def clearPaths():
     # delete content from position 0 to end
@@ -64,11 +73,13 @@ def clearPaths():
     entrycolumn.delete(0, tk.END)
     entrysuffix.delete(0, tk.END)
 
+
 def clearAnalysis():
     # delete content from position 0 to end
     entryTotal.delete(0, tk.END)
     entryUsed.delete(0, tk.END)
     entryNotUsed.delete(0, tk.END)
+
 
 def run():
     # Get entries
@@ -78,30 +89,43 @@ def run():
     suffix = entrysuffix.get()
     # If entries empty then fill with none
     if epu == "":
-        entryepu.insert(0, 'None')
+        entryepu.insert(0, "None")
     if star == "":
-        entrystar.insert(0, 'None')
+        entrystar.insert(0, "None")
         star = "None"
     if column == "":
-        entrycolumn.insert(0, 'None')
+        entrycolumn.insert(0, "None")
         column = "None"
     if suffix == "":
-        entrysuffix.insert(0, 'None')
+        entrysuffix.insert(0, "None")
         suffix = "None"
     # Run shell script
     if star == "None":
-        print('Using epu.epu_tracking.sh')
-        subprocess.call('epu.epu_tracking.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
+        print("Using epu.epu_tracking.sh")
+        subprocess.call(
+            "epu.epu_tracking.sh -e "
+            + epu
+            + " -i "
+            + star
+            + " -s "
+            + suffix
+            + " -c "
+            + column,
+            shell=True,
+        )
     else:
-        tracker = EPUTracker(Path("."), Path(epu) / "ImageDisk-1", suffix, Path(star), column)
+        tracker = EPUTracker(
+            Path("."), Path(epu) / "ImageDisk-1", suffix, Path(star), column
+        )
         tracker.track()
     popAnalysisFields()
+
 
 def popAnalysisFields():
     ## Get data if analysis already performed
     try:
-        with open('./EPU_analysis/settings.dat') as f:
-            print('Populating fields with previous analysis')
+        with open("./EPU_analysis/settings.dat") as f:
+            print("Populating fields with previous analysis")
             clearAnalysis()
             for line in f:
                 print(line)
@@ -113,11 +137,11 @@ def popAnalysisFields():
                     notused = line.strip().split()
     ## Populate fields with defaults if analysis not performed
     except IOError:
-        print('Previous analysis not found')
+        print("Previous analysis not found")
         total = "T0"
         used = "U0"
         notused = "N0"
-    #Fill varibales if no value found
+    # Fill varibales if no value found
     try:
         total
     except NameError:
@@ -130,19 +154,20 @@ def popAnalysisFields():
         notused
     except NameError:
         notused = "00"
-    #Fill fields if analysis already performed
+    # Fill fields if analysis already performed
     try:
         entryTotal.insert(0, total[1])
         entryUsed.insert(0, used[1])
         entryNotUsed.insert(0, notused[1])
     except IndexError:
-        print('Data not present, although previous analysis performed...')
+        print("Data not present, although previous analysis performed...")
+
 
 def popPathFields():
     ## Populate fields if analysis already performed
     try:
-        with open('./EPU_analysis/settings.dat') as f:
-            print('Populating fields with previous paths')
+        with open("./EPU_analysis/settings.dat") as f:
+            print("Populating fields with previous paths")
             clearPaths()
             for line in f:
                 if "Star" in line:
@@ -158,11 +183,12 @@ def popPathFields():
         entrycolumn.insert(0, column[1])
         entrysuffix.insert(0, suffix[1])
     except IOError:
-        print('Previous analysis not found')
-        #entrystar.insert(0, "[Enter star file]")
-        #entryepu.insert(0, "[Enter epu dir]")
-        #entrycolumn.insert(0, "[Enter Relion star file column name]")
-        #entrysuffix.insert(0, "[Enter suffix added to mic name by particle extraction]")
+        print("Previous analysis not found")
+        # entrystar.insert(0, "[Enter star file]")
+        # entryepu.insert(0, "[Enter epu dir]")
+        # entrycolumn.insert(0, "[Enter Relion star file column name]")
+        # entrysuffix.insert(0, "[Enter suffix added to mic name by particle extraction]")
+
 
 def open_file(path):
     if platform.system() == "Windows":
@@ -172,21 +198,26 @@ def open_file(path):
     else:
         subprocess.Popen(["xdg-open", path])
 
+
 def openTotal():
     # Browse to dir
-    open_file('./EPU_analysis/squares_all')
+    open_file("./EPU_analysis/squares_all")
+
 
 def openUsed():
     # Browse to dir
-    open_file('./EPU_analysis/squares_used')
+    open_file("./EPU_analysis/squares_used")
+
 
 def openNotUsed():
     # Browse to dir
-    open_file('./EPU_analysis/squares_not_used')
+    open_file("./EPU_analysis/squares_not_used")
+
 
 def inspect():
     # Browse to dir
-    os.system('epu.star_to_epu_browser_inspect.py')
+    os.system("epu.star_to_epu_browser_inspect.py")
+
 
 ###############################################################################
 
@@ -194,41 +225,41 @@ def inspect():
 main_frame = tk.Tk()
 
 main_frame.title("EPU analysis from Relion star file")
-main_frame.geometry('650x300')
+main_frame.geometry("650x300")
 
 row = 0
 ## Text and button entry
 row += 1
 entry_epu = tk.StringVar()
-entryepu = tk.Entry(main_frame, width=40,textvariable=entry_epu)
+entryepu = tk.Entry(main_frame, width=40, textvariable=entry_epu)
 entryepu.grid(column=1, row=row)
 buttonepu = tk.Button(main_frame, text="Browse epu", command=browseepu)
 buttonepu.grid(column=0, row=row)
-#entrystar.pack(side=tk.LEFT)
+# entrystar.pack(side=tk.LEFT)
 row += 1
 entry_star = tk.StringVar()
-entrystar = tk.Entry(main_frame, width=40,textvariable=entry_star)
+entrystar = tk.Entry(main_frame, width=40, textvariable=entry_star)
 entrystar.grid(column=1, row=row)
 buttonstar = tk.Button(main_frame, text="Browse star", command=browsestar)
 buttonstar.grid(column=0, row=row)
 row += 1
 entry_column = tk.StringVar()
-entrycolumn = tk.Entry(main_frame, width=40,textvariable=entry_column)
+entrycolumn = tk.Entry(main_frame, width=40, textvariable=entry_column)
 entrycolumn.grid(column=1, row=row)
 lbl = Label(main_frame, text="Star column:")
 lbl.grid(column=0, row=row)
 row += 1
 entry_suffix = tk.StringVar()
-entrysuffix = tk.Entry(main_frame, width=40,textvariable=entry_suffix)
+entrysuffix = tk.Entry(main_frame, width=40, textvariable=entry_suffix)
 entrysuffix.grid(column=1, row=row)
 lbl = Label(main_frame, text="Data suffix:")
 lbl.grid(column=0, row=row)
 row += 1
 ## Progress bar
-#style = ttk.Style()
-#style.theme_use('default')
-#style.configure("black.Horizontal.TProgressbar", background='black')
-bar = Progressbar(main_frame, length=200, style='black.Horizontal.TProgressbar')
+# style = ttk.Style()
+# style.theme_use('default')
+# style.configure("black.Horizontal.TProgressbar", background='black')
+bar = Progressbar(main_frame, length=200, style="black.Horizontal.TProgressbar")
 bar.grid(column=1, row=row)
 row += 1
 ## Buttons
@@ -244,7 +275,7 @@ row += 1
 ## Information and analysis
 lbl = Label(main_frame, text="Total squares:")
 lbl.grid(column=0, row=row)
-entryTotal = Entry(main_frame,width=10, state='normal')
+entryTotal = Entry(main_frame, width=10, state="normal")
 entryTotal.grid(column=1, row=row)
 buttonTotal = tk.Button(main_frame, text="View all", command=openTotal)
 buttonTotal.grid(column=2, row=row)
@@ -252,7 +283,7 @@ row += 1
 
 lbl = Label(main_frame, text="Used:")
 lbl.grid(column=0, row=row)
-entryUsed = Entry(main_frame,width=10, state='normal')
+entryUsed = Entry(main_frame, width=10, state="normal")
 entryUsed.grid(column=1, row=row)
 buttonUsed = tk.Button(main_frame, text="View used", command=openUsed)
 buttonUsed.grid(column=2, row=row)
@@ -260,7 +291,7 @@ row += 1
 
 lbl = Label(main_frame, text="Not used:")
 lbl.grid(column=0, row=row)
-entryNotUsed = Entry(main_frame,width=10, state='normal')
+entryNotUsed = Entry(main_frame, width=10, state="normal")
 entryNotUsed.grid(column=1, row=row)
 buttonNotUsed = tk.Button(main_frame, text="View not used", command=openNotUsed)
 buttonNotUsed.grid(column=2, row=row)
@@ -273,6 +304,6 @@ popPathFields()
 popAnalysisFields()
 
 ## Progress bar default to 0
-bar['value'] = 0
+bar["value"] = 0
 
 main_frame.mainloop()
