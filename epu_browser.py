@@ -24,13 +24,14 @@
 
 import os
 import platform
+import subprocess
 import tkinter as tk
+from pathlib import Path
 from tkinter import *
 from tkinter import filedialog
-import subprocess
 from tkinter.ttk import Progressbar
+
 from tracking import EPUTracker
-from pathlib import Path
 
 ###############################################################################
 
@@ -61,12 +62,12 @@ def browseepu():
     entryepu.insert(0, epuin)
 
 
-def clearAll():
-    clearAnalysis()
-    clearPaths()
+def clear_all():
+    clear_analysis()
+    clear_paths()
 
 
-def clearPaths():
+def clear_paths():
     # delete content from position 0 to end
     entrystar.delete(0, tk.END)
     entryepu.delete(0, tk.END)
@@ -74,7 +75,7 @@ def clearPaths():
     entrysuffix.delete(0, tk.END)
 
 
-def clearAnalysis():
+def clear_analysis():
     # delete content from position 0 to end
     entryTotal.delete(0, tk.END)
     entryUsed.delete(0, tk.END)
@@ -88,19 +89,19 @@ def run():
     column = entrycolumn.get()
     suffix = entrysuffix.get()
     # If entries empty then fill with none
-    if epu == "":
+    if not epu:
         entryepu.insert(0, "None")
-    if star == "":
+    if not star:
         entrystar.insert(0, "None")
-        star = "None"
-    if column == "":
+        star = None
+    if not column:
         entrycolumn.insert(0, "None")
-        column = "None"
-    if suffix == "":
+        column = None
+    if not suffix:
         entrysuffix.insert(0, "None")
-        suffix = "None"
+        suffix = None
     # Run shell script
-    if star == "None":
+    if star is None:
         print("Using epu.epu_tracking.sh")
         subprocess.call(
             "epu.epu_tracking.sh -e "
@@ -118,15 +119,15 @@ def run():
             Path("."), Path(epu) / "ImageDisk-1", suffix, Path(star), column
         )
         tracker.track()
-    popAnalysisFields()
+    pop_analysis_fields()
 
 
-def popAnalysisFields():
+def pop_analysis_fields():
     ## Get data if analysis already performed
     try:
         with open("./EPU_analysis/settings.dat") as f:
             print("Populating fields with previous analysis")
-            clearAnalysis()
+            clear_analysis()
             for line in f:
                 print(line)
                 if "Total:" in line:
@@ -163,12 +164,12 @@ def popAnalysisFields():
         print("Data not present, although previous analysis performed...")
 
 
-def popPathFields():
+def pop_path_fields():
     ## Populate fields if analysis already performed
     try:
         with open("./EPU_analysis/settings.dat") as f:
             print("Populating fields with previous paths")
-            clearPaths()
+            clear_paths()
             for line in f:
                 if "Star" in line:
                     star = line.strip().split()
@@ -199,17 +200,17 @@ def open_file(path):
         subprocess.Popen(["xdg-open", path])
 
 
-def openTotal():
+def open_total():
     # Browse to dir
     open_file("./EPU_analysis/squares_all")
 
 
-def openUsed():
+def open_used():
     # Browse to dir
     open_file("./EPU_analysis/squares_used")
 
 
-def openNotUsed():
+def open_not_used():
     # Browse to dir
     open_file("./EPU_analysis/squares_not_used")
 
@@ -265,7 +266,7 @@ row += 1
 ## Buttons
 buttonRun = tk.Button(main_frame, text="Run", command=run)
 buttonRun.grid(column=2, row=row)
-buttonClear = tk.Button(main_frame, text="Clear", command=clearAll)
+buttonClear = tk.Button(main_frame, text="Clear", command=clear_all)
 buttonClear.grid(column=3, row=row)
 row += 1
 lbl = Label(main_frame, text="Analysis:")
@@ -277,7 +278,7 @@ lbl = Label(main_frame, text="Total squares:")
 lbl.grid(column=0, row=row)
 entryTotal = Entry(main_frame, width=10, state="normal")
 entryTotal.grid(column=1, row=row)
-buttonTotal = tk.Button(main_frame, text="View all", command=openTotal)
+buttonTotal = tk.Button(main_frame, text="View all", command=open_total)
 buttonTotal.grid(column=2, row=row)
 row += 1
 
@@ -285,7 +286,7 @@ lbl = Label(main_frame, text="Used:")
 lbl.grid(column=0, row=row)
 entryUsed = Entry(main_frame, width=10, state="normal")
 entryUsed.grid(column=1, row=row)
-buttonUsed = tk.Button(main_frame, text="View used", command=openUsed)
+buttonUsed = tk.Button(main_frame, text="View used", command=open_used)
 buttonUsed.grid(column=2, row=row)
 row += 1
 
@@ -293,15 +294,15 @@ lbl = Label(main_frame, text="Not used:")
 lbl.grid(column=0, row=row)
 entryNotUsed = Entry(main_frame, width=10, state="normal")
 entryNotUsed.grid(column=1, row=row)
-buttonNotUsed = tk.Button(main_frame, text="View not used", command=openNotUsed)
+buttonNotUsed = tk.Button(main_frame, text="View not used", command=open_not_used)
 buttonNotUsed.grid(column=2, row=row)
 row += 1
 
 buttonInspect = tk.Button(main_frame, text="Inspect EPU images", command=inspect)
 buttonInspect.grid(column=2, row=row)
 
-popPathFields()
-popAnalysisFields()
+pop_path_fields()
+pop_analysis_fields()
 
 ## Progress bar default to 0
 bar["value"] = 0
