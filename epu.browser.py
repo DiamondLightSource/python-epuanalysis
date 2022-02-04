@@ -93,7 +93,7 @@ def run():
         print('Using epu.epu_tracking.sh')
         subprocess.call('epu.epu_tracking.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
     else:
-        tracker = EPUTracker(Path("."), Path(epu) / "ImageDisk-1", suffix, star, column)
+        tracker = EPUTracker(Path("."), Path(epu) / "ImageDisk-1", suffix, Path(star), column)
         tracker.track()
     popAnalysisFields()
 
