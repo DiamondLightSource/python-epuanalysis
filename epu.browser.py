@@ -23,14 +23,14 @@
 ############################################################################
 
 import os
-import sys
 import platform
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
 import subprocess
 from tkinter.ttk import Progressbar
-from tkinter import ttk
+from tracking import EPUTracker
+from pathlib import Path
 
 ###############################################################################
 
@@ -93,8 +93,8 @@ def run():
         print('Using epu.epu_tracking.sh')
         subprocess.call('epu.epu_tracking.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
     else:
-        print('Using epu.star_to_epu_tracking.sh')
-        subprocess.call('epu.star_to_epu_tracking_v2.sh -e '+epu+' -i '+star+' -s '+suffix+' -c '+column, shell=True)
+        tracker = EPUTracker(Path("."), Path(epu) / "ImageDisk-1", suffix, star, column)
+        tracker.track()
     popAnalysisFields()
 
 def popAnalysisFields():
