@@ -100,18 +100,17 @@ def run():
 def popAnalysisFields():
     ## Get data if analysis already performed
     try:
-        f = open('./EPU_analysis/settings.dat')
-        print('Populating fields with previous analysis')
-        clearAnalysis()
-        for line in f:
-            print(line)
-            if "Total:" in line:
-                total = line.strip().split()
-            if "Used:" in line:
-                used = line.strip().split()
-            if "Not:" in line:
-                notused = line.strip().split()
-        f.close()
+        with open('./EPU_analysis/settings.dat') as f:
+            print('Populating fields with previous analysis')
+            clearAnalysis()
+            for line in f:
+                print(line)
+                if "Total:" in line:
+                    total = line.strip().split()
+                if "Used:" in line:
+                    used = line.strip().split()
+                if "Not:" in line:
+                    notused = line.strip().split()
     ## Populate fields with defaults if analysis not performed
     except IOError:
         print('Previous analysis not found')
@@ -142,19 +141,18 @@ def popAnalysisFields():
 def popPathFields():
     ## Populate fields if analysis already performed
     try:
-        f = open('./EPU_analysis/settings.dat')
-        print('Populating fields with previous paths')
-        clearPaths()
-        for line in f:
-         if "Star" in line:
-           star = line.strip().split()
-         if "EPU" in line:
-           epu = line.strip().split()
-         if "Column" in line:
-           column = line.strip().split()
-         if "Suffix" in line:
-           suffix = line.strip().split()
-        f.close()
+        with open('./EPU_analysis/settings.dat') as f:
+            print('Populating fields with previous paths')
+            clearPaths()
+            for line in f:
+            if "Star" in line:
+            star = line.strip().split()
+            if "EPU" in line:
+            epu = line.strip().split()
+            if "Column" in line:
+            column = line.strip().split()
+            if "Suffix" in line:
+            suffix = line.strip().split()
         entrystar.insert(0, star[1])
         entryepu.insert(0, epu[1])
         entrycolumn.insert(0, column[1])
