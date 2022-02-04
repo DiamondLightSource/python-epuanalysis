@@ -145,14 +145,14 @@ def popPathFields():
             print('Populating fields with previous paths')
             clearPaths()
             for line in f:
-            if "Star" in line:
-            star = line.strip().split()
-            if "EPU" in line:
-            epu = line.strip().split()
-            if "Column" in line:
-            column = line.strip().split()
-            if "Suffix" in line:
-            suffix = line.strip().split()
+                if "Star" in line:
+                    star = line.strip().split()
+                if "EPU" in line:
+                    epu = line.strip().split()
+                if "Column" in line:
+                    column = line.strip().split()
+                if "Suffix" in line:
+                    suffix = line.strip().split()
         entrystar.insert(0, star[1])
         entryepu.insert(0, epu[1])
         entrycolumn.insert(0, column[1])
