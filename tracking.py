@@ -1,7 +1,7 @@
 import functools
 import os
 import pathlib
-from typing import Dict, List, NamedTuple, Set
+from typing import Dict, List, NamedTuple, Set, Optional
 
 from gemmi import cif
 
@@ -29,9 +29,9 @@ class EPUTracker:
         self,
         basepath: pathlib.Path,
         epudir: pathlib.Path,
-        suffix: str,
-        starfile: pathlib.Path,
-        column: str,
+        suffix: str = "",
+        starfile: Optional[pathlib.Path] = None,
+        column: str = "",
     ):
         self.basepath = basepath
         self.epudir = epudir
@@ -58,7 +58,8 @@ class EPUTracker:
         # save settings to disk
         with self.settings.open("w") as sf:
             sf.write("Tracking settings")
-            sf.write(f"Star: {self.basepath / self.starfile}")
+            if self.starfile:
+                sf.write(f"Star: {self.basepath / self.starfile}")
             sf.write(f"EPU: {self.epudir}")
             sf.write(f"Column: {self.column}")
             sf.write(f"Suffix: {self.suffix}")
@@ -73,7 +74,7 @@ class EPUTracker:
 
     @staticmethod
     def _get_fh(mic: pathlib.Path) -> str:
-        split_name = mic.name.split("_")
+        split_name = mic.stem.split("_")
         i = split_name.index("FoilHole")
         return split_name[i + 1]
 
@@ -101,51 +102,55 @@ class EPUTracker:
         structured_imgs = {}
         gridsquare_dirs = [p for p in self.epudir.glob("GridSquare*")]
         for gsd in gridsquare_dirs:
-            foilholes = [p for p in (gsd / "FoilHoles").glob("FoilHole*.jpeg")]
+            foilholes = [p for p in (gsd / "FoilHoles").glob("FoilHole*.jpg")]
             fh_data = {}
             for fh in foilholes:
-                fh_name = "_".join(fh.name.split("_")[:2])
+                fh_name = "_".join(fh.stem.split("_")[:2])
                 fh_data[fh_name] = FoilHole(
                     fh_name,
                     fh,
-                    [p for p in (gsd / "Data").glob(".jpg") if fh_name in p.name],
+                    [p for p in (gsd / "Data").glob("*.jpg") if fh_name in p.name],
                 )
-            structured_imgs[gsd.name] = GridSquare(
-                gsd.name, list(gsd.glob("*.jpg"))[0], list(fh_data.values())
+            structured_imgs[gsd.stem] = GridSquare(
+                gsd.stem, list(gsd.glob("*.jpg"))[0], list(fh_data.values())
             )
         return structured_imgs
 
     def track(self):
-        mics = self.extract(self.basepath / self.starfile)
-        used_grid_squares = {m.grid_sqaure for m in mics}
-        gui_directories = ["squares_all", "sqaures_used", "squares_not_used"]
         all_grid_squares = set(self.epu_images.keys())
+        if self.starfile:
+            mics = self.extract(self.basepath / self.starfile)
+            used_grid_squares = {m.grid_square for m in mics}
+        else:
+            used_grid_squares = all_grid_squares
+        gui_directories = ["squares_all", "squares_used", "squares_not_used"]
         grid_square_names = {
-            "sqaures_all": all_grid_squares,
+            "squares_all": all_grid_squares,
             "squares_used": used_grid_squares,
             "squares_not_used": all_grid_squares - used_grid_squares,
         }
         for gd in gui_directories:
             (self.outdir / gd).mkdir()
             for gs in grid_square_names[gd]:
-                (self.epu_images[gs].grid_square_img).symlink_to(self.outdir / gd)
-                (self.epu_images[gs].grid_square_img.with_suffix(".xml")).symlink_to(
-                    self.outdir / gd
+                from_file = self.epu_images[gs].grid_square_img
+                (self.outdir / gd / from_file.name).symlink_to(from_file)
+                (self.outdir / gd / (from_file.stem + ".xml")).symlink_to(
+                    from_file.with_suffix(".xml")
                 )
                 (self.outdir / gd / f"{gs}_FoilHoles").mkdir()
                 (self.outdir / gd / f"{gs}_Data").mkdir()
                 for fh in self.epu_images[gs].foil_holes:
-                    (fh.foil_hole_img).symlink_to(self.outdir / gd / f"{gs}_FoilHoles")
                     (
-                        im.symlink_to(self.outdir / gd / f"{gs}_Data")
-                        for im in fh.exposures
-                    )
-                    (fh.foil_hole_img.with_suffix(".xml")).symlink_to(
-                        self.outdir / gd / f"{gs}_FoilHoles"
-                    )
+                        self.outdir / gd / f"{gs}_FoilHoles" / (fh.foil_hole_img.name)
+                    ).symlink_to(fh.foil_hole_img)
+                    for im in fh.exposures:
+                        (self.outdir / gd / f"{gs}_Data" / im.name).symlink_to(im)
+                        (
+                            self.outdir / gd / f"{gs}_Data" / (im.stem + ".xml")
+                        ).symlink_to(im.with_suffix(".xml"))
                     (
-                        (im.with_suffix(".xml")).symlink_to(
-                            self.outdir / gd / f"{gs}_Data"
-                        )
-                        for im in fh.exposures
-                    )
+                        self.outdir
+                        / gd
+                        / f"{gs}_FoilHoles"
+                        / (fh.foil_hole_img.stem + ".xml")
+                    ).symlink_to(fh.foil_hole_img.with_suffix(".xml"))

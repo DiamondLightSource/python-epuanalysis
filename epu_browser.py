@@ -116,7 +116,7 @@ def run():
         )
     else:
         tracker = EPUTracker(
-            Path("."), Path(epu) / "ImageDisk-1", suffix, Path(star), column
+            Path("."), Path(epu) / "ImageDisk-1", suffix=suffix, starfile=Path(star), column=column
         )
         tracker.track()
     pop_analysis_fields()
