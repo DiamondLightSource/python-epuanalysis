@@ -89,15 +89,11 @@ class EPUTracker:
             if col:
                 column_data = [pathlib.Path(c) for c in col]
                 break
-        print(f"Number of particles: {len(column_data)}")
-        print("micrograph found:", column_data)
         unique_mics = {
             Micrograph(mic, self._get_gs(mic), self._get_fh(mic))
             for mic in column_data
             if str(mic).endswith(self.suffix)
         }
-        print("unique micrographs:", unique_mics, self.suffix)
-        print(f"Number of micrographs: {len(unique_mics)}")
         return unique_mics
 
     @property
@@ -105,7 +101,6 @@ class EPUTracker:
     def epu_images(self) -> Dict[str, GridSquare]:
         structured_imgs = {}
         gridsquare_dirs = [p for p in self.epudir.glob("GridSquare*")]
-        print(gridsquare_dirs)
         for gsd in gridsquare_dirs:
             foilholes = [p for p in (gsd / "FoilHoles").glob("FoilHole*.jpg")]
             fh_data = {}
@@ -124,9 +119,7 @@ class EPUTracker:
     def track(self):
         all_grid_squares = set(self.epu_images.keys())
         if self.starfile:
-            print("extracting from:", self.basepath / self.starfile)
             mics = self.extract(self.basepath / self.starfile)
-            print("micrographs:", mics)
             used_grid_squares = {m.grid_square for m in mics}
         else:
             used_grid_squares = all_grid_squares
@@ -136,13 +129,9 @@ class EPUTracker:
             "squares_used": used_grid_squares,
             "squares_not_used": all_grid_squares - used_grid_squares,
         }
-        print(all_grid_squares)
-        print(used_grid_squares)
-        print(self.epu_images)
         for gd in gui_directories:
             (self.outdir / gd).mkdir()
             for gs in grid_square_names[gd]:
-                print(gd, gs)
                 from_file = self.epu_images[gs].grid_square_img
                 (self.outdir / gd / from_file.name).symlink_to(from_file)
                 (self.outdir / gd / (from_file.stem + ".xml")).symlink_to(
