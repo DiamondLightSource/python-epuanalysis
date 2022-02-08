@@ -38,9 +38,11 @@ from tkinter import ttk
 import subprocess
 
 from PIL import ImageTk, Image
+from pathlib import Path
 
 from epuanalysis.epu_xml_inspector import inspect_xml
 from epuanalysis.epu_plot_foilhole import plot_foilhole
+from epuanalysis.plot_coords import plot_coords
 
 import glob
 
@@ -346,21 +348,14 @@ def inspect():
         print("Plotting particles for micrograph " + mic)
         print(star)
         print(mic)
-        # subprocess.call('epu.plot_coords.sh '+str(star[1])+' '+str(mic)+' '+str(entryMicX.get())+' '+str(entryMicY.get())+' '+str(entryPartD.get())+' y', shell=True)
-        # os.rename('particles.png', './EPU_analysis/particles.png')
-        subprocess.call(
-            "epu.plot_coords_v2.sh -i "
-            + str(star[1])
-            + " -m "
-            + str(mic)
-            + " -x "
-            + str(entryMicX.get())
-            + " -y "
-            + str(entryMicY.get())
-            + " -d "
-            + str(entryPartD.get())
-            + " -s y -f y -o EPU_analysis/star/",
-            shell=True,
+        plot_coords(
+            Path(star[1]),
+            Path(mic),
+            int(entryMicX.get()),
+            int(entryMicY.get()),
+            float(entryPartD.get()),
+            Path("./EPU_analysis/star/"),
+            flip=(False, True),
         )
         # Call  global variable from def FoilHole
         global micpath
@@ -383,7 +378,7 @@ def inspect():
         square = os.path.splitext(mic)[0]
         foil = entryFoil.get()
         foil = os.path.splitext(mic)[0]
-        plot_foilhole(str(square)+".xml", str(foil)+".xml")
+        plot_foilhole(str(square) + ".xml", str(foil) + ".xml")
         print("Plotting FoilHole location on Square image")
 
     def clearPickNo():

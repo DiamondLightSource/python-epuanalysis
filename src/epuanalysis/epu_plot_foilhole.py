@@ -40,6 +40,7 @@ def xmlParse(filein):
 
 ################################################################################
 
+
 def plot_foilhole(xml_square: str, xml_foilhole: str):
 
     # Get variables from xml file
