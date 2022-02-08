@@ -154,3 +154,8 @@ class EPUTracker:
                         / f"{gs}_FoilHoles"
                         / (fh.foil_hole_img.stem + ".xml")
                     ).symlink_to(fh.foil_hole_img.with_suffix(".xml"))
+        with self.settings.open("a") as sf:
+            sf.write(f"Total: {len(all_grid_squares)}\n")
+            sf.write(f"Used: {len(used_grid_squares)}\n")
+            sf.write(f"Not: {len(all_grid_squares - used_grid_squares)}\n")
+
