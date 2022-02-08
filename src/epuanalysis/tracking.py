@@ -57,19 +57,21 @@ class EPUTracker:
         self.star_dir = self.basepath / "EPU_analysis" / "star"
         # save settings to disk
         with self.settings.open("w") as sf:
-            sf.write("Tracking settings")
+            sf.write("Tracking settings\n")
             if self.starfile:
-                sf.write(f"Star: {self.basepath / self.starfile}")
-            sf.write(f"EPU: {self.epudir}")
-            sf.write(f"Column: {self.column}")
-            sf.write(f"Suffix: {self.suffix}")
+                sf.write(f"Star: {self.basepath / self.starfile}\n")
+            sf.write(f"EPU: {self.epudir}\n")
+            sf.write(f"Column: {self.column}\n")
+            sf.write(f"Suffix: {self.suffix}\n")
         (self.outdir / "star").mkdir()
 
     @staticmethod
     def _get_gs(mic: pathlib.Path) -> str:
         for p in mic.parts:
             if "GridSquare" in p:
-                return p.split("_")[-1]
+                split_name = p.split("_")
+                i = split_name.index("GridSquare")
+                return split_name[i] + "_" + split_name[i+1]
         return ""
 
     @staticmethod
@@ -88,11 +90,13 @@ class EPUTracker:
                 column_data = [pathlib.Path(c) for c in col]
                 break
         print(f"Number of particles: {len(column_data)}")
+        print("micrograph found:", column_data)
         unique_mics = {
             Micrograph(mic, self._get_gs(mic), self._get_fh(mic))
             for mic in column_data
             if str(mic).endswith(self.suffix)
         }
+        print("unique micrographs:", unique_mics, self.suffix)
         print(f"Number of micrographs: {len(unique_mics)}")
         return unique_mics
 
@@ -101,6 +105,7 @@ class EPUTracker:
     def epu_images(self) -> Dict[str, GridSquare]:
         structured_imgs = {}
         gridsquare_dirs = [p for p in self.epudir.glob("GridSquare*")]
+        print(gridsquare_dirs)
         for gsd in gridsquare_dirs:
             foilholes = [p for p in (gsd / "FoilHoles").glob("FoilHole*.jpg")]
             fh_data = {}
@@ -119,7 +124,9 @@ class EPUTracker:
     def track(self):
         all_grid_squares = set(self.epu_images.keys())
         if self.starfile:
+            print("extracting from:", self.basepath / self.starfile)
             mics = self.extract(self.basepath / self.starfile)
+            print("micrographs:", mics)
             used_grid_squares = {m.grid_square for m in mics}
         else:
             used_grid_squares = all_grid_squares
@@ -129,9 +136,13 @@ class EPUTracker:
             "squares_used": used_grid_squares,
             "squares_not_used": all_grid_squares - used_grid_squares,
         }
+        print(all_grid_squares)
+        print(used_grid_squares)
+        print(self.epu_images)
         for gd in gui_directories:
             (self.outdir / gd).mkdir()
             for gs in grid_square_names[gd]:
+                print(gd, gs)
                 from_file = self.epu_images[gs].grid_square_img
                 (self.outdir / gd / from_file.name).symlink_to(from_file)
                 (self.outdir / gd / (from_file.stem + ".xml")).symlink_to(
