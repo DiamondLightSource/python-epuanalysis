@@ -37,6 +37,7 @@ from epuanalysis.epu_star_to_epu_browser_inspect import inspect
 
 ###############################################################################
 
+
 def run():
 
     # Defines buttons
@@ -53,7 +54,6 @@ def run():
         # insert new_text at position 0
         entrystar.insert(0, starin)
 
-
     def browseepu():
         # Browse to dir
         main_frame.filename = filedialog.askdirectory(
@@ -65,11 +65,9 @@ def run():
         # insert new_text at position 0
         entryepu.insert(0, epuin)
 
-
     def clear_all():
         clear_analysis()
         clear_paths()
-
 
     def clear_paths():
         # delete content from position 0 to end
@@ -78,13 +76,11 @@ def run():
         entrycolumn.delete(0, tk.END)
         entrysuffix.delete(0, tk.END)
 
-
     def clear_analysis():
         # delete content from position 0 to end
         entryTotal.delete(0, tk.END)
         entryUsed.delete(0, tk.END)
         entryNotUsed.delete(0, tk.END)
-
 
     def run():
         # Get entries
@@ -105,15 +101,18 @@ def run():
             entrysuffix.insert(0, "None")
             suffix = None
         if star is None:
-            starpath = None 
+            starpath = None
         else:
             starpath = Path(star)
         tracker = EPUTracker(
-            Path("."), Path(epu) / "ImageDisk-1", suffix=suffix, starfile=starpath, column=column
+            Path("."),
+            Path(epu),
+            suffix=suffix,
+            starfile=starpath,
+            column=column,
         )
         tracker.track()
         pop_analysis_fields()
-
 
     def pop_analysis_fields():
         ## Get data if analysis already performed
@@ -156,7 +155,6 @@ def run():
         except IndexError:
             print("Data not present, although previous analysis performed...")
 
-
     def pop_path_fields():
         ## Populate fields if analysis already performed
         try:
@@ -183,7 +181,6 @@ def run():
             # entrycolumn.insert(0, "[Enter Relion star file column name]")
             # entrysuffix.insert(0, "[Enter suffix added to mic name by particle extraction]")
 
-
     def open_file(path):
         if platform.system() == "Windows":
             os.startfile(path)
@@ -192,26 +189,21 @@ def run():
         else:
             subprocess.Popen(["xdg-open", path])
 
-
     def open_total():
         # Browse to dir
         open_file("./EPU_analysis/squares_all")
-
 
     def open_used():
         # Browse to dir
         open_file("./EPU_analysis/squares_used")
 
-
     def open_not_used():
         # Browse to dir
         open_file("./EPU_analysis/squares_not_used")
 
-
     def inspect():
         # Browse to dir
         inspect()
-
 
     ###############################################################################
 

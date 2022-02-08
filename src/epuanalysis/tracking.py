@@ -71,7 +71,7 @@ class EPUTracker:
             if "GridSquare" in p:
                 split_name = p.split("_")
                 i = split_name.index("GridSquare")
-                return split_name[i] + "_" + split_name[i+1]
+                return split_name[i] + "_" + split_name[i + 1]
         return ""
 
     @staticmethod
