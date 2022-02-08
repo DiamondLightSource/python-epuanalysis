@@ -21,20 +21,20 @@ ns["s"] = "http://schemas.datacontract.org/2004/07/Fei.Applications.Common.Servi
 ns["a"] = "http://schemas.datacontract.org/2004/07/System.Drawing"
 
 # Define functions
-def xmlParse(filein):
+def xml_parse(filein):
     # Read xml file for square
     tree = ET.parse(filein)
     root = tree.getroot()
     # Find stage positions in xml file
-    stagePositionX = root.find("so:microscopeData/so:stage/so:Position/so:X", ns).text
-    stagePositionY = root.find("so:microscopeData/so:stage/so:Position/so:Y", ns).text
-    pixelSize = root.find("so:SpatialScale/so:pixelSize/so:x/so:numericValue", ns).text
+    stage_position_x = root.find("so:microscopeData/so:stage/so:Position/so:X", ns).text
+    stage_position_y = root.find("so:microscopeData/so:stage/so:Position/so:Y", ns).text
+    pixel_size = root.find("so:SpatialScale/so:pixelSize/so:x/so:numericValue", ns).text
     # Return variables from function
     # Remember variables cease to exist outside of function
     return (
-        float(stagePositionX) * 1e6,
-        float(stagePositionY) * 1e6,
-        float(pixelSize) * 1e6,
+        float(stage_position_x) * 1e6,
+        float(stage_position_y) * 1e6,
+        float(pixel_size) * 1e6,
     )
 
 
@@ -44,21 +44,21 @@ def xmlParse(filein):
 def plot_foilhole(xml_square: str, xml_foilhole: str):
 
     # Get variables from xml file
-    sqMicronX, sqMicronY, sqMicronPix = xmlParse(xml_square)
-    fhMicronX, fhMicronY, fhMicronPix = xmlParse(xml_foilhole)
+    sq_micron_x, sq_micron_y, sq_micron_pix = xml_parse(xml_square)
+    fh_micron_x, fh_micron_y, fh_micron_pix = xml_parse(xml_foilhole)
 
     # Calculate FoilHole location on Square in microns
-    fhLocMicronX = sqMicronX - fhMicronX
-    fhLocMicronY = sqMicronY - fhMicronY
+    fh_loc_micron_x = sq_micron_x - fh_micron_x
+    fh_loc_micron_y = sq_micron_y - fh_micron_y
     # Convert to pixels
-    fhLocPxX = fhLocMicronX / sqMicronPix
-    fhLocPxY = fhLocMicronY / sqMicronPix
+    fh_loc_px_x = fh_loc_micron_x / sq_micron_pix
+    fh_loc_px_y = fh_loc_micron_y / sq_micron_pix
     # Convert to pixel coordinates based on detector size
-    fhPlotPxX = 2048 + fhLocPxX
-    fhPlotPxY = 2048 - fhLocPxY
+    fh_plot_px_x = 2048 + fh_loc_px_x
+    fh_plot_px_y = 2048 - fh_loc_px_y
 
-    print(fhPlotPxX)
-    print(fhPlotPxY)
+    print(fh_plot_px_x)
+    print(fh_plot_px_y)
 
     ################################################################################
 
@@ -69,5 +69,5 @@ def plot_foilhole(xml_square: str, xml_foilhole: str):
     ax.set_ylim([0, 4096])
     ax.axis("off")
 
-    ax.scatter(fhPlotPxX, fhPlotPxY, facecolors="none", edgecolors="r", s=300)
+    ax.scatter(fh_plot_px_x, fh_plot_px_y, facecolors="none", edgecolors="r", s=300)
     plt.savefig("FoilHole.png", bbox_inches=0, transparent="True")
