@@ -32,7 +32,7 @@ from tkinter import filedialog
 from tkinter.ttk import Progressbar
 
 from epuanalysis.tracking import EPUTracker
-from epuanalysis.epu_star_to_epu_browser_inspect import inspect
+from epuanalysis.epu_star_to_epu_browser_inspect import inspect_squares
 
 
 ###############################################################################
@@ -203,7 +203,7 @@ def run():
 
     def inspect():
         # Browse to dir
-        inspect()
+        inspect_squares()
 
     ###############################################################################
 

@@ -49,7 +49,7 @@ import glob
 ###############################################################################
 
 
-def inspect():
+def inspect_squares():
     def inspectXml():
         # Write the current micrograph to a file for reading by xml inspection gui
         # This is not the right way, pass over as variable properly
