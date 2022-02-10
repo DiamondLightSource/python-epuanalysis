@@ -39,7 +39,7 @@ def plot_coords(
     if flip[1]:
         ax.invert_yaxis()
     for xc, yc in coords:
-        circ = plt.Circle((xc, yc), diameter)
+        circ = plt.Circle((xc, yc), diameter, fill=False)
         ax.add_patch(circ)
 
     fig.savefig(outdir / "particles.png", transparent=True)
