@@ -22,10 +22,11 @@ def plot_coords(
     def _get_coords(star_document) -> List[Tuple[float, float]]:
         _coords = []
         for block in star_document:
+            mics = list(block.find_loop("_rlnMicrographName"))
             xcol = list(block.find_loop("_rlnCoordinateX"))
             if xcol:
                 ycol = list(block.find_loop("_rlnCoordinateY"))
-                _coords = [(float(_x), float(_y)) for _x, _y in zip(xcol, ycol)]
+                _coords = [(float(_x), float(_y)) for _x, _y, m in zip(xcol, ycol, mics) if micrograph.stem in m]
                 return _coords
         return _coords
 
@@ -39,7 +40,7 @@ def plot_coords(
     if flip[1]:
         ax.invert_yaxis()
     for xc, yc in coords:
-        circ = plt.Circle((xc, yc), diameter, fill=False)
+        circ = plt.Circle((xc, yc), diameter, fill=False, color="orange")
         ax.add_patch(circ)
 
     fig.savefig(outdir / "particles.png", transparent=True)
