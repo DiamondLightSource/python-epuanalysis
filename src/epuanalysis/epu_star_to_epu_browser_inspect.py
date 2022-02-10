@@ -51,6 +51,7 @@ import glob
 ###############################################################################
 
 current_grid_square = ""
+current_foil_hole = None
 
 
 def inspect_squares(image_structure):
@@ -230,6 +231,8 @@ def inspect_squares(image_structure):
         )
         lbl.grid(sticky="w", column=6, row=12)
         clearPickNo()
+        global current_foil_hole
+        current_foil_hole = foil_hole
         ## Select first FoilHole of selected Square
         # foillist.selection_set(first=0)
         # select(miclist, 0, MicSelect)
@@ -268,7 +271,7 @@ def inspect_squares(image_structure):
         #        lbl.grid(sticky="W", column=8, row=17)
         # Plot particles?
         if pick_state.get() == 1:
-            plotPicks()
+            plotPicks(imgpath)
 
     def radioClickSq():
         value = radioSq.get()
@@ -303,27 +306,20 @@ def inspect_squares(image_structure):
     def RBGAImage(path):
         return Image.open(path).convert("RGBA")
 
-    def plotPicks():
-        mic = entryMic.get()
-        mic = os.path.splitext(mic)[0]
-        print("Plotting particles for micrograph " + mic)
+    def plotPicks(mic_path):
+        print("Plotting particles for micrograph " + mic_path)
         print(star)
-        print(mic)
         plot_coords(
             Path(star[1]),
-            Path(mic),
+            Path(mic_path),
             int(entryMicX.get()),
             int(entryMicY.get()),
             float(entryPartD.get()),
             Path("./EPU_analysis/star/"),
             flip=(False, True),
         )
-        # Call  global variable from def FoilHole
-        global micpath
-        print(micpath)
-        imgpath = micpath
         ##Load Micrograph image
-        micLoad = RBGAImage(imgpath)
+        micLoad = RBGAImage(mic_path)
         micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
         ## Particle pick overlay
         parLoad = RBGAImage("./EPU_analysis/star/particles.png")
