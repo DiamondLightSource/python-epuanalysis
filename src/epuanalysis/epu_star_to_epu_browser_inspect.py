@@ -46,7 +46,6 @@ import glob
 ###############################################################################
 
 current_grid_square = ""
-current_foil_hole = None
 
 
 def inspect_squares(image_structure):
@@ -223,11 +222,6 @@ def inspect_squares(image_structure):
         )
         lbl.grid(sticky="w", column=6, row=12)
         clearPickNo()
-        global current_foil_hole
-        current_foil_hole = foil_hole
-        ## Select first FoilHole of selected Square
-        # foillist.selection_set(first=0)
-        # select(miclist, 0, MicSelect)
 
     def MicSelect(evt):
         value = miclist.get(miclist.curselection())
@@ -299,8 +293,6 @@ def inspect_squares(image_structure):
         return Image.open(path).convert("RGBA")
 
     def plotPicks(mic_path):
-        print("Plotting particles for micrograph " + mic_path)
-        print(star)
         plot_coords(
             Path(star[1]),
             Path(mic_path),
