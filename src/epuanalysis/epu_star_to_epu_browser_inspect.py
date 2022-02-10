@@ -27,15 +27,10 @@
 # 2) Only display jpg in listboxes that have associated _FoilHoles.dat
 
 import os
-import platform
 import tkinter as tk
 import sys
 from tkinter import *
 from tkinter import ttk
-
-# from tkinter import filedialog
-# from tkinter.ttk import Progressbar
-import subprocess
 
 from PIL import ImageTk, Image
 from pathlib import Path
@@ -69,13 +64,10 @@ def inspect_squares(image_structure):
         inspect_xml()
 
     def file_len(fname):
-        p = subprocess.Popen(
-            ["wc", "-l", fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        result, err = p.communicate()
-        if p.returncode != 0:
-            raise IOError(err)
-        return int(result.strip().split()[0])
+        length = 0
+        with open(fname, "r") as f:
+            length = len(f.readlines())
+        return length
 
     def popSquares():
         # Clear current square list
