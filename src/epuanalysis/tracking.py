@@ -102,6 +102,8 @@ class EPUTracker:
         structured_imgs = {}
         gridsquare_dirs = [p for p in self.epudir.glob("GridSquare*")]
         for gsd in gridsquare_dirs:
+            if not gsd.is_dir():
+                continue
             foilholes = [p for p in (gsd / "FoilHoles").glob("FoilHole*.jpg")]
             fh_data = {}
             for fh in foilholes:
@@ -132,30 +134,35 @@ class EPUTracker:
         for gd in gui_directories:
             (self.outdir / gd).mkdir()
             for gs in grid_square_names[gd]:
-                from_file = self.epu_images[gs].grid_square_img
-                (self.outdir / gd / from_file.name).symlink_to(from_file)
-                (self.outdir / gd / (from_file.stem + ".xml")).symlink_to(
-                    from_file.with_suffix(".xml")
-                )
-                (self.outdir / gd / f"{gs}_FoilHoles").mkdir()
-                (self.outdir / gd / f"{gs}_Data").mkdir()
-                for fh in self.epu_images[gs].foil_holes:
-                    (
-                        self.outdir / gd / f"{gs}_FoilHoles" / (fh.foil_hole_img.name)
-                    ).symlink_to(fh.foil_hole_img)
-                    for im in fh.exposures:
-                        (self.outdir / gd / f"{gs}_Data" / im.name).symlink_to(im)
+                if self.epu_images.get(gs):
+                    from_file = self.epu_images[gs].grid_square_img
+                    (self.outdir / gd / from_file.name).symlink_to(from_file)
+                    (self.outdir / gd / (from_file.stem + ".xml")).symlink_to(
+                        from_file.with_suffix(".xml")
+                    )
+                    (self.outdir / gd / f"{gs}_FoilHoles").mkdir()
+                    (self.outdir / gd / f"{gs}_Data").mkdir()
+                    for fh in self.epu_images[gs].foil_holes:
                         (
-                            self.outdir / gd / f"{gs}_Data" / (im.stem + ".xml")
-                        ).symlink_to(im.with_suffix(".xml"))
-                    (
-                        self.outdir
-                        / gd
-                        / f"{gs}_FoilHoles"
-                        / (fh.foil_hole_img.stem + ".xml")
-                    ).symlink_to(fh.foil_hole_img.with_suffix(".xml"))
+                            self.outdir
+                            / gd
+                            / f"{gs}_FoilHoles"
+                            / (fh.foil_hole_img.name)
+                        ).symlink_to(fh.foil_hole_img)
+                        for im in fh.exposures:
+                            (self.outdir / gd / f"{gs}_Data" / im.name).symlink_to(im)
+                            (
+                                self.outdir / gd / f"{gs}_Data" / (im.stem + ".xml")
+                            ).symlink_to(im.with_suffix(".xml"))
+                        (
+                            self.outdir
+                            / gd
+                            / f"{gs}_FoilHoles"
+                            / (fh.foil_hole_img.stem + ".xml")
+                        ).symlink_to(fh.foil_hole_img.with_suffix(".xml"))
+                else:
+                    print(f"Grid square directory for {gs} not found")
         with self.settings.open("a") as sf:
             sf.write(f"Total: {len(all_grid_squares)}\n")
             sf.write(f"Used: {len(used_grid_squares)}\n")
             sf.write(f"Not: {len(all_grid_squares - used_grid_squares)}\n")
-
