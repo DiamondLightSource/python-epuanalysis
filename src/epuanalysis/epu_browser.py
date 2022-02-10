@@ -42,7 +42,10 @@ from itertools import count
 
 class Browser:
     def __init__(self, title: str, geometry: str = "650x300"):
+        # self.root = tk.Tk()
+        # self.root.withdraw()
         self.frame = tk.Tk()
+        # self.frame = tk.Toplevel()
         self.frame.title("EPU analysis from Relion star file")
         self.frame.geometry("650x300")
         self._counter = count(start=1)
@@ -51,6 +54,7 @@ class Browser:
         )
         self._bar["value"] = 0
         self._entries: Dict[str, tk.Entry] = {}
+        self._image_structure: dict = {}
         self._generate_items()
         self._pop_path_fields()
         self._pop_analysis_fields()
@@ -215,7 +219,7 @@ class Browser:
             starfile=starpath,
             column=column,
         )
-        tracker.track()
+        self._image_structure = tracker.track()
         self._pop_analysis_fields()
 
     def _pop_analysis_fields(self):
@@ -302,10 +306,9 @@ class Browser:
         # Browse to dir
         self.open_file("./EPU_analysis/squares_not_used")
 
-    @staticmethod
-    def inspect():
+    def inspect(self):
         # Browse to dir
-        inspect_squares()
+        inspect_squares(self._image_structure)
 
 
 def run():

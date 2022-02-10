@@ -40,6 +40,8 @@ import subprocess
 from PIL import ImageTk, Image
 from pathlib import Path
 
+import epuanalysis
+
 from epuanalysis.epu_xml_inspector import inspect_xml
 from epuanalysis.epu_plot_foilhole import plot_foilhole
 from epuanalysis.plot_coords import plot_coords
@@ -48,13 +50,15 @@ import glob
 
 ###############################################################################
 
+current_grid_square = ""
 
-def inspect_squares():
+
+def inspect_squares(image_structure):
     def inspectXml():
         # Write the current micrograph to a file for reading by xml inspection gui
         # This is not the right way, pass over as variable properly
         # https://www.code4example.com/python/tkinter/tkinter-passing-variables-between-windows/
-        value = str(miclist.get(miclist.curselection()))
+        value = miclist.get(miclist.curselection())
         imgpath = value.rstrip()
         print(imgpath)
         file = open(".micrograph.dat", "w")
@@ -76,18 +80,7 @@ def inspect_squares():
         # Clear current square list
         sqlist.delete(0, tk.END)
         ## Populate square list box
-        try:
-            f = open("./EPU_analysis/.squares_all.dat")
-            task_list = f.readlines()
-            for item in task_list:
-                sqlist.insert(tk.END, item)
-            f.close()
-        ## Populate fields with defaults if analysis not performed
-        except IOError:
-            print("Previous analysis not found")
-        ## Print useful information in label
-        # Number of Square images
-        wc = file_len("./EPU_analysis/.squares_all.dat")
+        wc = len(image_structure["squares_all"])
         lbl = Label(main_frame, text="Number of Squares: " + str(wc) + "  ")
         lbl.grid(sticky="w", column=2, row=12)
 
@@ -113,18 +106,9 @@ def inspect_squares():
         # Get radio button variable to load All, Used, or NotUsed squares
         value = radioSq.get()
         ## Populate list box
-        try:
-            f = open(str(value))
-            task_list = f.readlines()
-            for item in task_list:
-                sqlist.insert(tk.END, item)
-            f.close()
-        ## Populate fields with defaults if analysis not performed
-        except IOError:
-            print("Previous analysis not found")
-        ## Print useful information in label
-        # Number of Square images
-        wc = file_len(str(value))
+        for gs in image_structure[value].values():
+            sqlist.insert(tk.END, gs.name)
+        wc = len(image_structure[value])
         lbl = Label(main_frame, text="Number of Squares: " + str(wc) + "  ")
         lbl.grid(sticky="w", column=2, row=12)
 
@@ -145,9 +129,10 @@ def inspect_squares():
         lbl.grid(sticky="w", column=8, row=15)
 
     def SquareSelect(evt):
-        value = str(sqlist.get(sqlist.curselection()))
-        imgpath = value.rstrip()
-        print("111", imgpath)
+        value = sqlist.get(sqlist.curselection())
+        # value = sqlist.get(ACTIVE)
+        # imgpath = value.rstrip()
+        imgpath = image_structure[radioSq.get()][value].grid_square_img
         # Define global variable for use outside def, Square
         global squarepath
         squarepath = imgpath
@@ -168,41 +153,19 @@ def inspect_squares():
         entrySq.delete(0, tk.END)
         entrySq.insert(0, name)
         # Populate Foil Holes
-        value = os.path.splitext(imgpath)[0]
+        # value = os.path.splitext(imgpath)[0]
+
         ## Clear FoilHole list box
         foillist.delete(0, tk.END)
         ## Populate list box
         try:
-            f = open(value + "_FoilHoles.dat")
-            task_list = f.readlines()
-            for item in task_list:
+            for item in [
+                fh.name for fh in image_structure[radioSq.get()][value].foil_holes
+            ]:
                 ## Populate FoilHole list based on level of particle filtering selected
-                global foilfilt
-                global star
-                if foilfilt == "foilAll":
-                    foillist.insert(tk.END, item)
-                elif foilfilt == "foilUsed":
-                    # Get FoilHole name and reference for searching star file
-                    base = os.path.basename(item)
-                    name = os.path.splitext(base)[0]
-                    reference = name.split("_")[1]
-                    # Only populate list if foil reference can be found in star file
-                    with open(star[1]) as file:
-                        if reference in file.read():
-                            foillist.insert(tk.END, item)
-                elif foilfilt == "foilNot":
-                    # Get FoilHole name and reference for searching star file
-                    base = os.path.basename(item)
-                    name = os.path.splitext(base)[0]
-                    reference = name.split("_")[1]
-                    # Only populate list if foil reference can be found in star file
-                    with open(star[1]) as file:
-                        if reference in file.read():
-                            print("not")
-                        else:
-                            foillist.insert(tk.END, item)
-            f.close()
-        ## Populate fields with defaults if analysis not performed
+                foillist.insert(tk.END, item)
+
+                ## Populate fields with defaults if analysis not performed
         except IOError:
             print(value + "_FoilHoles.dat not found")
         ## Print useful information in label
@@ -214,7 +177,9 @@ def inspect_squares():
         clearPickNo()
         ## Select first FoilHole of selected Square
         # foillist.selection_set(first=0)
-        select(foillist, 0, FoilSelect)
+        # select(foillist, 0, FoilSelect)
+        global current_grid_square
+        current_grid_square = value
 
     def select(self, index, command):
         self.activate(index)
@@ -222,11 +187,17 @@ def inspect_squares():
         self.selection_set(index)
         self.see(index)
         self.selection_anchor(index)
-        command()
+        command(None)
 
     def FoilSelect(evt):
-        value = str(foillist.get(foillist.curselection()))
-        imgpath = value.rstrip()
+        value = foillist.get(foillist.curselection())
+        foil_holes = [
+            fh
+            for fh in image_structure[radioSq.get()][current_grid_square].foil_holes
+            if fh.name == value
+        ]
+        foil_hole = foil_holes[0]
+        imgpath = foil_hole.foil_hole_img
         # Define global variable for use outside def, FoilHole
         global foilpath
         foilpath = imgpath
@@ -246,36 +217,26 @@ def inspect_squares():
         entryFoil.delete(0, tk.END)
         entryFoil.insert(0, name)
         # Build path for searching for data images
-        search = os.path.splitext(squarepath)[0]
-        datapath = search + "_Data"
-        # Find term from FoilHole to search for data images
-        foilref = os.path.basename(foilpath).split("_")[1]
-        # Search for associated data images
-        datafiles = [
-            f
-            for f in glob.glob(
-                datapath + "**/*" + str(foilref) + "*.jpg", recursive=True
-            )
-        ]
         ## Populate data list box
         # Clear Data list box
         miclist.delete(0, tk.END)
         # Populate listbox
-        task_list = datafiles
-        for item in task_list:
+        for item in foil_hole.exposures:
             miclist.insert(tk.END, item)
         ## Print useful information in label
         # Number of FoilHoles images
-        lbl = Label(main_frame, text="Number of Micrographs: " + str(len(datafiles)))
+        lbl = Label(
+            main_frame, text="Number of Micrographs: " + str(len(foil_hole.exposures))
+        )
         lbl.grid(sticky="w", column=6, row=12)
         clearPickNo()
         ## Select first FoilHole of selected Square
         # foillist.selection_set(first=0)
-        select(miclist, 0, MicSelect)
+        # select(miclist, 0, MicSelect)
 
     def MicSelect(evt):
-        value = str(miclist.get(miclist.curselection()))
-        imgpath = value.rstrip()
+        value = miclist.get(miclist.curselection())
+        imgpath = value
         # Define global variable for use outside def, FoilHole
         global micpath
         micpath = imgpath
@@ -299,12 +260,12 @@ def inspect_squares():
         partLines = []
         global star
         # for line in open(star[1]):
-        for line in open("EPU_analysis/star/.mainDataLines.dat"):
-            if os.path.splitext(name)[0] in line:
-                partLines.append(line)
-                partNo = len(partLines)
-                lbl = Label(main_frame, text="  " + str(partNo))
-                lbl.grid(sticky="W", column=8, row=17)
+        # for line in open("EPU_analysis/star/.mainDataLines.dat"):
+        #    if os.path.splitext(name)[0] in line:
+        #        partLines.append(line)
+        #        partNo = len(partLines)
+        #        lbl = Label(main_frame, text="  " + str(partNo))
+        #        lbl.grid(sticky="W", column=8, row=17)
         # Plot particles?
         if pick_state.get() == 1:
             plotPicks()
@@ -319,7 +280,7 @@ def inspect_squares():
         foilfilt = radioFoil.get()
         print("Radio button clicked, FoilHole filtering " + foilfilt)
 
-    def detectorSelect(event):
+    def detectorSelect():
         detector = combo.get()
         entryMicX.delete(0, tk.END)
         entryMicY.delete(0, tk.END)
@@ -413,7 +374,8 @@ def inspect_squares():
     ###############################################################################
 
     ### Create GUI
-    main_frame = tk.Tk()
+    # main_frame = tk.Tk()
+    main_frame = tk.Toplevel()
 
     main_frame.title("EPU analysis from Relion star file")
     main_frame.geometry("1420x820")
@@ -459,7 +421,8 @@ def inspect_squares():
         main_frame,
         text="All",
         indicatoron=0,
-        value="./EPU_analysis/.squares_all.dat",
+        value="squares_all",
+        # value="./EPU_analysis/.squares_all.dat",
         command=radioClickSq,
         variable=radioSq,
     ).grid(sticky="w", column=2, row=row)
@@ -467,7 +430,8 @@ def inspect_squares():
         main_frame,
         text="Used",
         indicatoron=0,
-        value="./EPU_analysis/.squares_used.dat",
+        value="squares_used",
+        # value="./EPU_analysis/.squares_used.dat",
         command=radioClickSq,
         variable=radioSq,
     ).grid(sticky="", column=2, row=row)
@@ -475,7 +439,8 @@ def inspect_squares():
         main_frame,
         text="Not used",
         indicatoron=0,
-        value="./EPU_analysis/.squares_not.dat",
+        value="squares_not_used",
+        # value="./EPU_analysis/.squares_not_used.dat",
         command=radioClickSq,
         variable=radioSq,
     ).grid(sticky="e", column=2, row=row)
@@ -588,7 +553,9 @@ def inspect_squares():
     popSquares()
 
     ## Square image
-    sqLoad = Image.open(str(exedir) + "/data/testSq.jpeg")
+    sqLoad = Image.open(
+        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testSq.jpeg"
+    )
     sqLoad = sqLoad.resize((400, 400), Image.ANTIALIAS)
     sqRender = ImageTk.PhotoImage(sqLoad)
     imgSq = Label(main_frame, image=sqRender)
@@ -602,7 +569,9 @@ def inspect_squares():
     entrySq.grid(column=2, row=11, sticky=W)
 
     ## FoilHole image
-    fhLoad = RBGAImage(str(exedir) + "/data/testFoil.jpeg")
+    fhLoad = RBGAImage(
+        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testFoil.jpeg"
+    )
     fhLoad = fhLoad.resize((400, 400), Image.ANTIALIAS)
     fhRender = ImageTk.PhotoImage(fhLoad)
     imgFoil = Label(main_frame, image=fhRender)
@@ -616,7 +585,9 @@ def inspect_squares():
     entryFoil.grid(column=4, row=11, sticky=W)
 
     ## Micrograph image
-    micLoad = RBGAImage(str(exedir) + "/data/testMic.jpeg")
+    micLoad = RBGAImage(
+        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testMic.jpeg"
+    )
     micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
     micRender = ImageTk.PhotoImage(micLoad)
     imgMic = Label(main_frame, image=micRender)
@@ -632,7 +603,9 @@ def inspect_squares():
     entryMic.grid(column=6, row=11, sticky=W)
 
     ## Particle pick overlay
-    parLoad = RBGAImage(str(exedir) + "/data/testPart.png")
+    parLoad = RBGAImage(
+        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testPart.png"
+    )
     parLoad = parLoad.resize((400, 400), Image.ANTIALIAS)
     micLoad.paste(parLoad, (0, 0), parLoad)
     parRender = ImageTk.PhotoImage(micLoad)
