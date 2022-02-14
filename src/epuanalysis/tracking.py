@@ -1,7 +1,8 @@
 import functools
 import os
 import pathlib
-from typing import Dict, List, NamedTuple, Set, Optional
+from collections import Counter
+from typing import Dict, List, NamedTuple, Set, Optional, Tuple
 
 from gemmi import cif
 
@@ -10,6 +11,7 @@ class Micrograph(NamedTuple):
     name: pathlib.Path
     grid_square: str
     foil_hole: str
+    num_particles: Optional[int]
 
 
 class FoilHole(NamedTuple):
@@ -21,7 +23,7 @@ class FoilHole(NamedTuple):
 class GridSquare(NamedTuple):
     name: str
     grid_square_img: pathlib.Path
-    foil_holes: List[FoilHole]
+    foil_holes: List[Tuple[FoilHole, int]]
 
 
 class EPUTracker:
@@ -39,6 +41,7 @@ class EPUTracker:
         self.starfile = starfile
         self.column = column
         self.outdir = self.basepath / "EPU_analysis"
+        self.counted_micrographs = Counter([])
         if self.outdir.is_dir():
             print(f"Directory EPU_analysis already found in {self.basepath}; removing")
 
@@ -84,15 +87,28 @@ class EPUTracker:
         gemmi_readable = os.fspath(starfile)
         star_doc = cif.read_file(gemmi_readable)
         column_data: List[pathlib.Path] = []
+        _coords = False
+        if "_rlnCoordinate" in self.column:
+            _coords = True
         for block in star_doc:
             col = list(block.find_loop(self.column))
+            if not _coords:
+                coord_check = list(block.find_loop("_rlnCoordinateX"))
+                _coords = bool(coord_check)
             if col:
                 column_data = [pathlib.Path(c) for c in col]
                 break
+        mics = [mic for mic in column_data if str(mic).endswith(self.suffix)]
+        unique_paths = set(mics)
+        self.counted_micrographs = Counter([mic.stem for mic in mics])
         unique_mics = {
-            Micrograph(mic, self._get_gs(mic), self._get_fh(mic))
-            for mic in column_data
-            if str(mic).endswith(self.suffix)
+            Micrograph(
+                mic,
+                self._get_gs(mic),
+                self._get_fh(mic),
+                self.counted_micrographs[mic.stem] if _coords else None,
+            )
+            for mic in unique_paths
         }
         return unique_mics
 
@@ -108,10 +124,19 @@ class EPUTracker:
             fh_data = {}
             for fh in foilholes:
                 fh_name = "_".join(fh.stem.split("_")[:2])
+                exposures = []
+                for p in (gsd / "Data").glob("*.jpg"):
+                    if fh_name in p.name:
+                        num_parts = 0
+                        for cmic, np in self.counted_micrographs.items():
+                            if p.stem in cmic:
+                                num_parts = np
+                                break
+                        exposures.append((p, num_parts))
                 fh_data[fh_name] = FoilHole(
                     fh_name,
                     fh,
-                    [p for p in (gsd / "Data").glob("*.jpg") if fh_name in p.name],
+                    exposures,
                 )
             structured_imgs[gsd.stem] = GridSquare(
                 gsd.stem, list(gsd.glob("*.jpg"))[0], list(fh_data.values())
@@ -119,12 +144,13 @@ class EPUTracker:
         return structured_imgs
 
     def track(self) -> dict:
-        all_grid_squares = set(self.epu_images.keys())
         if self.starfile:
             mics = self.extract(self.basepath / self.starfile)
             used_grid_squares = {m.grid_square for m in mics}
         else:
             used_grid_squares = all_grid_squares
+        all_grid_squares = set(self.epu_images.keys())
+
         gui_directories = ["squares_all", "squares_used", "squares_not_used"]
         grid_square_names = {
             "squares_all": all_grid_squares,

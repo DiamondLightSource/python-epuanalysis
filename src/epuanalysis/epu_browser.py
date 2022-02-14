@@ -32,7 +32,7 @@ from tkinter import filedialog
 from tkinter.ttk import Progressbar
 
 from epuanalysis.tracking import EPUTracker
-from epuanalysis.epu_star_to_epu_browser_inspect import inspect_squares
+from epuanalysis.epu_star_to_epu_browser_inspect import open_inspection_gui
 from epuanalysis.frame import GUIFrame
 
 ###############################################################################
@@ -45,7 +45,9 @@ class Browser(GUIFrame):
             self.frame, length=200, style="black.Horizontal.TProgressbar"
         )
         self._bar["value"] = 0
+        self._generate_items()
         self._image_structure: dict = {}
+        self.frame.mainloop()
 
     def _generate_items(self):
         epu_var = tk.StringVar()
@@ -265,7 +267,7 @@ class Browser(GUIFrame):
 
     def inspect(self):
         # Browse to dir
-        inspect_squares(self._image_structure)
+        open_inspection_gui(self._image_structure)
 
 
 def run():

@@ -194,7 +194,7 @@ def inspect_xml():
     ###############################################################################
 
     ### Create GUI
-    main_frame = tk.Tk()
+    main_frame = tk.Toplevel()
 
     main_frame.title("XML data inspector for EPU image")
     main_frame.geometry("700x800")
@@ -301,12 +301,12 @@ def inspect_xml():
     box_xmlDF.grid(column=1, row=row)
 
     ## Micrograph image
-    micLoad = Image.open(str(exedir) + "/data/testMic.jpeg")
-    micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
-    micRender = ImageTk.PhotoImage(micLoad)
-    imgMic = Label(main_frame, image=micRender)
-    imgMic.image = micRender
-    imgMic.place(x=3, y=380)
+    # micLoad = Image.open(str(exedir) + "/data/testMic.jpeg")
+    # micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
+    # micRender = ImageTk.PhotoImage(micLoad)
+    # imgMic = Label(main_frame, image=micRender)
+    # imgMic.image = micRender
+    # imgMic.place(x=3, y=380)
 
     # Use this for testing gui quickly, comment out when you're done
     # testxml()

@@ -41,17 +41,43 @@ from epuanalysis.epu_xml_inspector import inspect_xml
 from epuanalysis.epu_plot_foilhole import plot_foilhole
 from epuanalysis.plot_coords import plot_coords
 from epuanalysis.frame import GUIFrame
+from epuanalysis.tracking import FoilHole
 
-from typing import Optional
+from typing import Callable, Optional, Tuple
 
-###############################################################################
 
-current_grid_square = ""
+def RGBAImage(path):
+    return Image.open(path).convert("RGBA")
 
 
 class Inspector(GUIFrame):
-    def __init__(self, title: str, geometry: str = "1420x820"):
+    def __init__(self, title: str, image_structure: dict, geometry: str = "1420x820"):
         super().__init__(title, geometry=geometry, top_level=True)
+        self._image_structure = image_structure
+        self._current_grid_square: str = ""
+        self._current_foil_hole: FoilHole = ""
+        self.pick_state = tk.IntVar()
+        self.pick_state.set(0)
+        self._star: List[str] = []
+        self._epu: List[str] = []
+        self._suffix: List[str] = []
+        self._load_settings()
+        self._generate_items()
+        self.frame.mainloop()
+
+    def _load_settings(self):
+        try:
+            with open("EPU_analysis/settings.dat") as f:
+                for line in f:
+                    if "Star" in line:
+                        self._star = line.strip().split()
+                    if "EPU" in line:
+                        self._epu = line.strip().split()
+                    if "Suffix" in line:
+                        self._suffix = line.strip().split()
+        ## Populate fields with defaults if analysis not performed
+        except IOError:
+            print("Previous analysis not found")
 
     def _generate_items(self):
         row = self.row()
@@ -72,13 +98,14 @@ class Inspector(GUIFrame):
 
         row = self.row()
         self._entries["rad_square_selection"] = self._make_radio_button(
-            row, 2, "squares_all", "All"
+            row, 2, "squares_all", "All", self._radio_click_sq, sticky="w"
         )
         self._make_radio_button(
             row,
             2,
             "squares_used",
             "Used",
+            self._radio_click_sq,
             variable=self._entries["rad_square_selection"],
         )
         self._make_radio_button(
@@ -86,18 +113,133 @@ class Inspector(GUIFrame):
             2,
             "squares_not_used",
             "Not used",
+            self._radio_click_sq,
             variable=self._entries["rad_square_selection"],
+            sticky="e",
         )
 
         self._entries["rad_foil_selection"] = self._make_radio_button(
-            row, 4, "foilAll", "All"
+            row, 4, "foilAll", "All", self._radio_click_foil, sticky="w"
         )
         self._make_radio_button(
-            row, 4, "foilUsed", "Used", variable=self._entries["rad_foil_selection"]
+            row,
+            4,
+            "foilUsed",
+            "Used",
+            self._radio_click_foil,
+            variable=self._entries["rad_foil_selection"],
         )
         self._make_radio_button(
-            row, 4, "foilNot", "Not used", variable=self._entries["rad_foil_selection"]
+            row,
+            4,
+            "foilNot",
+            "Not used",
+            self._radio_click_foil,
+            variable=self._entries["rad_foil_selection"],
+            sticky="e",
         )
+
+        lbl = tk.Label(self.frame, text="                                           ")
+        lbl.grid(sticky="w", column=4, row=self.row())
+
+        self._entries["pick_check"] = tk.Checkbutton(
+            self.frame, text="Particles", var=self.pick_state
+        )
+        self._entries["pick_check"].grid(sticky="e", column=10, row=11)
+
+        mic_x_var = tk.StringVar()
+        self._entries["mic_x"] = self._make_label(
+            12,
+            "x (px):",
+            column_entry=10,
+            column_label=10,
+            width=5,
+            var=mic_x_var,
+            sticky="e",
+        )
+        self._entries["mic_x"].insert(0, "4096")
+
+        mic_y_var = tk.StringVar()
+        self._entries["mic_y"] = self._make_label(
+            13,
+            "y (px):",
+            column_entry=10,
+            column_label=10,
+            width=5,
+            var=mic_y_var,
+            sticky="e",
+        )
+        self._entries["mic_y"].insert(0, "4096")
+
+        mic_d_var = tk.StringVar()
+        self._entries["mic_d"] = self._make_label(
+            14,
+            "D (px):",
+            column_entry=10,
+            column_label=10,
+            width=5,
+            var=mic_d_var,
+            sticky="e",
+        )
+        self._entries["mic_d"].insert(0, "150")
+
+        values = ["K2", "K3", "FII", "FIII", "Other"]
+        self._entries["combo"] = tk.ttk.Combobox(self.frame, values=values, width=10)
+        self._entries["combo"].current(4)
+        self._entries["combo"].grid(column=10, row=15)
+        self._entries["combo"].bind("<<ComboboxSelected>>", self._select_detector)
+
+        self._entries["xml_button"] = tk.Button(
+            self.frame, text="Inspect xml", command=self._inspect_xml
+        )
+        self._entries["xml_button"].grid(column=10, row=16)
+
+        row = self.row()
+
+        lbl = tk.Label(self.frame, text="Squares:")
+        lbl.grid(column=2, row=row)
+        lbl = tk.Label(self.frame, text="Foil Holes:")
+        lbl.grid(column=4, row=row)
+        lbl = tk.Label(self.frame, text="Holes:")
+        lbl.grid(column=6, row=row)
+
+        row = self.row()
+
+        self._entries["square_list"] = self._make_scrollbar(row, 0, self._square_select)
+        self._entries["foil_list"] = self._make_scrollbar(row, 2, self._foil_select)
+        self._entries["mic_list"] = self._make_scrollbar(row, 4, self._mic_select)
+
+        self._pop_squares()
+
+        lbl = tk.Label(
+            self.frame, text="Current square selection:", anchor=tk.W, justify=tk.LEFT
+        )
+        lbl.grid(sticky="w", column=2, row=10)
+        self._entries["entry_square"] = tk.Entry(self.frame, width=45, state="normal")
+        self._entries["entry_square"].grid(column=2, row=11, sticky=tk.W)
+
+        lbl = tk.Label(
+            self.frame, text="Current foil selection:", anchor=tk.W, justify=tk.LEFT
+        )
+        lbl.grid(sticky="w", column=4, row=10)
+        self._entries["entry_foil"] = tk.Entry(self.frame, width=45, state="normal")
+        self._entries["entry_foil"].grid(column=4, row=11, sticky=tk.W)
+
+        lbl = tk.Label(
+            self.frame, text="Current micrograph selection:", anchor=tk.W, justify=LEFT
+        )
+        lbl.grid(sticky="w", column=6, row=10)
+        self._entries["entry_mic"] = tk.Entry(self.frame, width=45, state="normal")
+        self._entries["entry_mic"].grid(column=6, row=11, sticky=tk.W)
+
+    def _make_scrollbar(self, row: int, column: int, command: Callable) -> tk.Listbox:
+        scrollbar = tk.Scrollbar(self.frame)
+        scrollbar.grid(row=row, column=column + 3, rowspan=5, sticky=tk.N + tk.S)
+        lb = tk.Listbox(self.frame, height=10, width=45, yscrollcommand=scrollbar.set)
+        lb.grid(row=row, column=column + 2, rowspan=5, sticky=tk.E + tk.W)
+        lb.bind("<<ListboxSelect>>", command)
+        scrollbar.config(command=lb.yview)
+        return lb
 
     def _make_radio_button(
         self,
@@ -105,7 +247,9 @@ class Inspector(GUIFrame):
         column: int,
         value: str,
         text: str,
+        command: Callable,
         variable: Optional[tk.StringVar] = None,
+        sticky: str = "",
     ):
         radio_var = tk.StringVar()
         rad = Radiobutton(
@@ -113,556 +257,210 @@ class Inspector(GUIFrame):
             text=text,
             indicatoron=0,
             value=value,
-            command=self.radio_click_sq,
+            command=command,
             variable=variable or radio_var,
         )
-        rad.grid(sticky="w", column=column, row=row)
+        rad.grid(sticky=sticky, column=column, row=row)
         return variable or radio_var
 
+    def _radio_click_sq(self):
+        value = self._entries["rad_square_selection"].get()
+        self._entries["square_list"].delete(0, tk.END)
+        for gs in self._image_structure[value].values():
+            self._entries["square_list"].insert(tk.END, gs.name)
+        wc = len(self._image_structure[value])
+        lbl = tk.Label(self.frame, text="Number of Squares: " + str(wc) + "  ")
+        lbl.grid(sticky="w", column=2, row=12)
 
-def inspect_squares(image_structure):
-    def inspectXml():
+        lbl = tk.Label(self.frame, text="Number of FoilHoles:       ")
+        lbl.grid(sticky="w", column=4, row=12)
+
+        lbl = tk.Label(self.frame, text="Number of Micrographs:     ")
+        lbl.grid(sticky="w", column=6, row=12)
+
+    def _radio_click_foil(self):
+        pass
+
+    def _select_detector(self, event):
+        detector = self._entries["combo"].get()
+        self._entries["mic_x"].delete(0, tk.END)
+        self._entries["mic_y"].delete(0, tk.END)
+        if detector == "K2":
+            self._entries["mic_x"].insert(0, "3710")
+            self._entries["mic_y"].insert(0, "3838")
+        elif detector == "K3":
+            self._entries["mic_x"].insert(0, "5760")
+            self._entries["mic_y"].insert(0, "4092")
+        elif detector == "FII":
+            self._entries["mic_x"].insert(0, "4096")
+            self._entries["mic_y"].insert(0, "4096")
+        elif detector == "FIII":
+            self._entries["mic_x"].insert(0, "4096")
+            self._entries["mic_y"].insert(0, "4096")
+        elif detector == "Other":
+            self._entries["mic_x"].insert(0, "")
+            self._entries["mic_y"].insert(0, "")
+
+    def _inspect_xml(self):
         # Write the current micrograph to a file for reading by xml inspection gui
         # This is not the right way, pass over as variable properly
         # https://www.code4example.com/python/tkinter/tkinter-passing-variables-between-windows/
-        value = miclist.get(miclist.curselection())
+        value = self._entries["mic_list"].get(self._entries["mic_list"].curselection())
         imgpath = value.rstrip()
-        print(imgpath)
-        file = open(".micrograph.dat", "w")
-        file.write(imgpath + "\n")
-        file.close()
+        with open(".micrograph.dat", "w") as f:
+            f.write(imgpath + "\n")
         # Open the xml inspection GUI
         inspect_xml()
 
-    def file_len(fname):
-        length = 0
-        with open(fname, "r") as f:
-            length = len(f.readlines())
-        return length
-
-    def popSquares():
+    def _pop_squares(self):
         # Clear current square list
-        sqlist.delete(0, tk.END)
+        self._entries["square_list"].delete(0, tk.END)
         ## Populate square list box
-        wc = len(image_structure["squares_all"])
-        lbl = Label(main_frame, text="Number of Squares: " + str(wc) + "  ")
+        wc = len(self._image_structure["squares_all"])
+        lbl = Label(self.frame, text="Number of Squares: " + str(wc) + "  ")
         lbl.grid(sticky="w", column=2, row=12)
 
-        lbl = Label(main_frame, text="Number of FoilHoles:        ")
+        lbl = Label(self.frame, text="Number of FoilHoles:        ")
         lbl.grid(sticky="w", column=4, row=12)
 
-        lbl = Label(main_frame, text="Number of Micrographs:      ")
+        lbl = Label(self.frame, text="Number of Micrographs:      ")
         lbl.grid(sticky="w", column=6, row=12)
 
-        # lbl = Label(main_frame, text='Greyscale of FoilHole Micrograph(s):      ')
-        lbl = Label(main_frame, text="                                           ")
-        lbl.grid(sticky="w", column=6, row=13)
-        # lbl = Label(main_frame, text='Greyscale of selected Micrograph(s):      ')
-        lbl = Label(main_frame, text="                                           ")
-        lbl.grid(sticky="w", column=6, row=14)
-
-        lbl = Label(main_frame, text="No. of particles:")
-        lbl.grid(sticky="w", column=8, row=15)
-
-    def popConditional():
-        # Clear current list
-        sqlist.delete(0, tk.END)
-        # Get radio button variable to load All, Used, or NotUsed squares
-        value = radioSq.get()
-        ## Populate list box
-        for gs in image_structure[value].values():
-            sqlist.insert(tk.END, gs.name)
-        wc = len(image_structure[value])
-        lbl = Label(main_frame, text="Number of Squares: " + str(wc) + "  ")
-        lbl.grid(sticky="w", column=2, row=12)
-
-        lbl = Label(main_frame, text="Number of FoilHoles:       ")
-        lbl.grid(sticky="w", column=4, row=12)
-
-        lbl = Label(main_frame, text="Number of Micrographs:     ")
-        lbl.grid(sticky="w", column=6, row=12)
-
-        # lbl = Label(main_frame, text='Greyscale of FoilHole Micrograph(s):      ')
-        lbl = Label(main_frame, text="                                           ")
-        lbl.grid(sticky="w", column=6, row=13)
-        # lbl = Label(main_frame, text='Greyscale of selected Micrograph(s):      ')
-        lbl = Label(main_frame, text="                                           ")
-        lbl.grid(sticky="w", column=6, row=14)
-
-        lbl = Label(main_frame, text="No. of particles:")
-        lbl.grid(sticky="w", column=8, row=15)
-
-    def SquareSelect(evt):
-        value = sqlist.get(sqlist.curselection())
-        # value = sqlist.get(ACTIVE)
-        # imgpath = value.rstrip()
-        imgpath = image_structure[radioSq.get()][value].grid_square_img
-        # Define global variable for use outside def, Square
-        global squarepath
-        squarepath = imgpath
-        # Load square image
-        load = RBGAImage(imgpath)
+    def _select(
+        self,
+        img_path: str,
+        img_name: str,
+        position: Tuple[int, int],
+        next_level: str = "",
+        entry: str = "",
+    ) -> str:
+        load = RGBAImage(img_path)
         width, height = load.size
-        print(width, height)
         ratio = width / height
-        print(ratio)
         load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
         render = ImageTk.PhotoImage(load)
-        imgSq = Label(main_frame, image=render)
-        imgSq.image = render
-        imgSq.place(x=0, y=395)
+        self._entries[img_name] = tk.Label(self.frame, image=render)
+        self._entries[img_name].image = render
+        self._entries[img_name].place(x=position[0], y=position[1])
+        if next_level:
+            self._entries[next_level].delete(0, tk.END)
+        if entry:
+            name = os.path.basename(img_path)
+            self._entries[entry].delete(0, tk.END)
+            self._entries[entry].insert(0, name)
 
-        # Report selected square to GUI
-        name = os.path.basename(imgpath)
-        entrySq.delete(0, tk.END)
-        entrySq.insert(0, name)
-        # Populate Foil Holes
-        # value = os.path.splitext(imgpath)[0]
+    def _square_select(self, evt):
+        value = self._entries["square_list"].get(
+            self._entries["square_list"].curselection()
+        )
+        imgpath = self._image_structure[self._entries["rad_square_selection"].get()][
+            value
+        ].grid_square_img
+        self._current_grid_square = value
+        self._select(
+            imgpath,
+            "img_square",
+            (0, 395),
+            next_level="foil_list",
+            entry="entry_square",
+        )
 
-        ## Clear FoilHole list box
-        foillist.delete(0, tk.END)
         ## Populate list box
-        try:
-            for item in [
-                fh.name for fh in image_structure[radioSq.get()][value].foil_holes
-            ]:
-                ## Populate FoilHole list based on level of particle filtering selected
-                foillist.insert(tk.END, item)
+        for item in [
+            fh.name
+            for fh in self._image_structure[
+                self._entries["rad_square_selection"].get()
+            ][value].foil_holes
+        ]:
+            ## Populate FoilHole list based on level of particle filtering selected
+            self._entries["foil_list"].insert(tk.END, item)
 
-                ## Populate fields with defaults if analysis not performed
-        except IOError:
-            print(value + "_FoilHoles.dat not found")
         ## Print useful information in label
-        # Number of FoilHoles images
         lbl = Label(
-            main_frame, text="Number of FoilHoles: " + str(foillist.size()) + "    "
+            self.frame,
+            text="Number of FoilHoles: "
+            + str(self._entries["foil_list"].size())
+            + "    ",
         )
         lbl.grid(sticky="w", column=4, row=12)
-        clearPickNo()
-        ## Select first FoilHole of selected Square
-        # foillist.selection_set(first=0)
-        # select(foillist, 0, FoilSelect)
-        global current_grid_square
-        current_grid_square = value
+        self.clear_pick_no()
 
-    def select(self, index, command):
-        self.activate(index)
-        self.select_clear(0, "end")
-        self.selection_set(index)
-        self.see(index)
-        self.selection_anchor(index)
-        command(None)
-
-    def FoilSelect(evt):
-        value = foillist.get(foillist.curselection())
+    def _foil_select(self, evt):
+        value = self._entries["foil_list"].get(
+            self._entries["foil_list"].curselection()
+        )
         foil_holes = [
             fh
-            for fh in image_structure[radioSq.get()][current_grid_square].foil_holes
+            for fh in self._image_structure[
+                self._entries["rad_square_selection"].get()
+            ][self._current_grid_square].foil_holes
             if fh.name == value
         ]
         foil_hole = foil_holes[0]
+        self._current_foil_hole = foil_hole
         imgpath = foil_hole.foil_hole_img
-        # Define global variable for use outside def, FoilHole
-        global foilpath
-        foilpath = imgpath
-        # Load FoilHole image
-        load = RBGAImage(imgpath)
-        width, height = load.size
-        print(width, height)
-        ratio = width / height
-        print(ratio)
-        load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
-        render = ImageTk.PhotoImage(load)
-        imgFoil = Label(main_frame, image=render)
-        imgFoil.image = render
-        imgFoil.place(x=432, y=395)
-        # Report selected FoilHole to GUI
-        name = os.path.basename(imgpath)
-        entryFoil.delete(0, tk.END)
-        entryFoil.insert(0, name)
-        # Build path for searching for data images
-        ## Populate data list box
-        # Clear Data list box
-        miclist.delete(0, tk.END)
+        self._select(
+            imgpath, "img_foil", (432, 395), next_level="mic_list", entry="entry_foil"
+        )
+
         # Populate listbox
         for item in foil_hole.exposures:
-            miclist.insert(tk.END, item)
+            self._entries["mic_list"].insert(tk.END, item[0])
         ## Print useful information in label
         # Number of FoilHoles images
         lbl = Label(
-            main_frame, text="Number of Micrographs: " + str(len(foil_hole.exposures))
+            self.frame, text=f"Number of Micrographs: {len(foil_hole.exposures)}"
         )
         lbl.grid(sticky="w", column=6, row=12)
-        clearPickNo()
+        self.clear_pick_no()
 
-    def MicSelect(evt):
-        value = miclist.get(miclist.curselection())
-        imgpath = value
-        # Define global variable for use outside def, FoilHole
-        global micpath
-        micpath = imgpath
-        # Load Micrograph image
-        load = RBGAImage(imgpath)
-        width, height = load.size
-        print(width, height)
-        ratio = width / height
-        print(ratio)
-        load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
-        render = ImageTk.PhotoImage(load)
-        imgMic = Label(main_frame, image=render)
-        imgMic.image = render
-        imgMic.place(x=862, y=395)
-        # Report selected data mic to GUI
-        name = os.path.basename(imgpath)
-        entryMic.delete(0, tk.END)
-        entryMic.insert(0, name)
+    def _mic_select(self, evt):
+        imgpath = self._entries["mic_list"].get(
+            self._entries["mic_list"].curselection()
+        )
+        self._select(imgpath, "img_mic", (862, 395), entry="entry_mic")
+
         # Report number of picked particles to GUI
-        clearPickNo()
-        partLines = []
-        global star
-        # for line in open(star[1]):
-        # for line in open("EPU_analysis/star/.mainDataLines.dat"):
-        #    if os.path.splitext(name)[0] in line:
-        #        partLines.append(line)
-        #        partNo = len(partLines)
-        #        lbl = Label(main_frame, text="  " + str(partNo))
-        #        lbl.grid(sticky="W", column=8, row=17)
-        # Plot particles?
-        if pick_state.get() == 1:
-            plotPicks(imgpath)
+        self.clear_pick_no()
+        num_particles = None
+        for mic, num_parts in self._current_foil_hole.exposures:
+            if str(mic) == imgpath:
+                num_particles = num_parts
+                break
+        lbl = tk.Label(self.frame, text=f"No. of particles: {num_particles}")
+        lbl.grid(sticky="W", column=10, row=11)
+        if self.pick_state.get():
+            self._plot_picks(imgpath)
 
-    def radioClickSq():
-        value = radioSq.get()
-        print("Radio button clicked, use dataset " + value)
-        popConditional()
-
-    def radioClickFoil():
-        global foilfilt
-        foilfilt = radioFoil.get()
-        print("Radio button clicked, FoilHole filtering " + foilfilt)
-
-    def detectorSelect():
-        detector = combo.get()
-        entryMicX.delete(0, tk.END)
-        entryMicY.delete(0, tk.END)
-        if detector == "K2":
-            entryMicX.insert(0, "3710")
-            entryMicY.insert(0, "3838")
-        elif detector == "K3":
-            entryMicX.insert(0, "5760")
-            entryMicY.insert(0, "4092")
-        elif detector == "FII":
-            entryMicX.insert(0, "4096")
-            entryMicY.insert(0, "4096")
-        elif detector == "FIII":
-            entryMicX.insert(0, "4096")
-            entryMicY.insert(0, "4096")
-        elif detector == "Other":
-            entryMicX.insert(0, "")
-            entryMicY.insert(0, "")
-
-    def RBGAImage(path):
-        return Image.open(path).convert("RGBA")
-
-    def plotPicks(mic_path):
+    def _plot_picks(self, mic_path: str):
         plot_coords(
-            Path(star[1]),
+            Path(self._star[1]),
             Path(mic_path),
-            int(entryMicX.get()),
-            int(entryMicY.get()),
-            float(entryPartD.get()),
+            int(self._entries["mic_x"].get()),
+            int(self._entries["mic_y"].get()),
+            float(self._entries["mic_d"].get()),
             Path("./EPU_analysis/star/"),
             flip=(False, True),
         )
         ##Load Micrograph image
-        micLoad = RBGAImage(mic_path)
-        micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
+        mic_load = RGBAImage(mic_path)
+        mic_load = mic_load.resize((400, 400), Image.ANTIALIAS)
         ## Particle pick overlay
-        parLoad = RBGAImage("./EPU_analysis/star/particles.png")
-        parLoad = parLoad.resize((400, 400), Image.ANTIALIAS)
-        micLoad.paste(parLoad, (0, 0), parLoad)
-        parRender = ImageTk.PhotoImage(micLoad)
-        imgMic = Label(main_frame, image=parRender)
-        imgMic.image = parRender
-        imgMic.place(x=862, y=395)
+        par_load = RGBAImage("./EPU_analysis/star/particles.png")
+        par_load = par_load.resize((400, 400), Image.ANTIALIAS)
+        mic_load.paste(par_load, (0, 0), par_load)
+        par_render = ImageTk.PhotoImage(mic_load)
+        img_mic = tk.Label(self.frame, image=par_render)
+        img_mic.image = par_render
+        img_mic.place(x=862, y=395)
 
-    def plotFoilHole():
-        square = entrySq.get()
-        square = os.path.splitext(mic)[0]
-        foil = entryFoil.get()
-        foil = os.path.splitext(mic)[0]
-        plot_foilhole(str(square) + ".xml", str(foil) + ".xml")
-        print("Plotting FoilHole location on Square image")
-
-    def clearPickNo():
+    def clear_pick_no(self):
         # Clear part picks report
-        lbl = Label(main_frame, text="         ")
-        lbl.grid(sticky="W", column=8, row=17)
+        lbl = tk.Label(self.frame, text="         ")
+        lbl.grid(sticky="W", column=8, row=11)
 
-    def clearMicSel():
-        ## Clear Mic list box
-        miclist.delete(0, tk.END)
-        # Clear
 
-    def openSettings():
-        try:
-            f = open("EPU_analysis/settings.dat")
-            print("Populating fields with previous paths")
-            for line in f:
-                if "Star" in line:
-                    global star
-                    star = line.strip().split()
-                if "EPU" in line:
-                    global epu
-                    epu = line.strip().split()
-                if "Suffix" in line:
-                    global suffix
-                    suffix = line.strip().split()
-            f.close()
-        ## Populate fields with defaults if analysis not performed
-        except IOError:
-            print("Previous analysis not found")
-
-    ###############################################################################
-
-    ### Create GUI
-    # main_frame = tk.Tk()
-    main_frame = tk.Toplevel()
-
-    main_frame.title("EPU analysis from Relion star file")
-    main_frame.geometry("1420x820")
-
-    ## Some defs that need to be run at GUI start
-    openSettings()
-    clearPickNo()
-
-    ## Variables
-    radioSq = StringVar()
-    radioFoil = StringVar()
-    foilfilt = "foilAll"
-
-    # This scripts location
-    exe = sys.argv[0]
-    exedir = os.path.dirname(sys.argv[0])
-
-    ## GUI layout
-    row = 0
-    column = 0
-
-    # btn = tk.Button(main_frame, text="popSquares", command = popSquares).grid(sticky="w", column=2, row=row)
-    row += 1
-
-    # Radio buttons for data filtering
-    lbl = Label(
-        main_frame,
-        text="Show all Squares or only Squares found in star file:",
-        anchor=W,
-        justify=LEFT,
+def open_inspection_gui(image_structure):
+    inspector = Inspector(
+        "EPU analysis from Relion star file", image_structure=image_structure
     )
-    lbl.grid(column=2, row=row)
-    lbl = Label(
-        main_frame,
-        text="Show all FoilHoles or only FoilHoles with particles:",
-        anchor=W,
-        justify=LEFT,
-    )
-    lbl.grid(column=4, row=row)
-    row += 1
-
-    rad1 = Radiobutton(
-        main_frame,
-        text="All",
-        indicatoron=0,
-        value="squares_all",
-        # value="./EPU_analysis/.squares_all.dat",
-        command=radioClickSq,
-        variable=radioSq,
-    ).grid(sticky="w", column=2, row=row)
-    rad2 = Radiobutton(
-        main_frame,
-        text="Used",
-        indicatoron=0,
-        value="squares_used",
-        # value="./EPU_analysis/.squares_used.dat",
-        command=radioClickSq,
-        variable=radioSq,
-    ).grid(sticky="", column=2, row=row)
-    rad3 = Radiobutton(
-        main_frame,
-        text="Not used",
-        indicatoron=0,
-        value="squares_not_used",
-        # value="./EPU_analysis/.squares_not_used.dat",
-        command=radioClickSq,
-        variable=radioSq,
-    ).grid(sticky="e", column=2, row=row)
-
-    rad4 = Radiobutton(
-        main_frame,
-        text="All",
-        indicatoron=0,
-        value="foilAll",
-        command=radioClickFoil,
-        variable=radioFoil,
-    ).grid(sticky="w", column=4, row=row)
-    rad5 = Radiobutton(
-        main_frame,
-        text="Used",
-        indicatoron=0,
-        value="foilUsed",
-        command=radioClickFoil,
-        variable=radioFoil,
-    ).grid(sticky="", column=4, row=row)
-    rad6 = Radiobutton(
-        main_frame,
-        text="Not used",
-        indicatoron=0,
-        value="foilNot",
-        command=radioClickFoil,
-        variable=radioFoil,
-    ).grid(sticky="e", column=4, row=row)
-
-    row += 1
-    lbl = Label(main_frame, text="                                           ")
-    lbl.grid(sticky="w", column=4, row=row)
-
-    # Plot picks
-    # btn = tk.Button(main_frame,text='Clear picks', command = MicSelect).grid(sticky="e", column=8, row=15)
-    pick_state = IntVar()
-    pick_state.set(0)  # set check state
-    check1 = Checkbutton(main_frame, text="Particles", var=pick_state).grid(
-        sticky="e", column=8, row=18
-    )
-
-    lbl = Label(main_frame, text="x (px):", anchor=W, justify=LEFT)
-    lbl.grid(sticky="w", column=8, row=19)
-    entryMicX = tk.StringVar()
-    entryMicX = tk.Entry(main_frame, width=5, state="normal")
-    entryMicX.grid(column=8, row=19, sticky=E)
-    entryMicX.insert(0, "4096")
-
-    lbl = Label(main_frame, text="y (px):", anchor=W, justify=LEFT)
-    lbl.grid(sticky="w", column=8, row=20)
-    entryMicY = tk.StringVar()
-    entryMicY = tk.Entry(main_frame, width=5, state="normal")
-    entryMicY.grid(column=8, row=20, sticky=E)
-    entryMicY.insert(0, "4096")
-
-    lbl = Label(main_frame, text="D (px):", anchor=W, justify=RIGHT)
-    lbl.grid(sticky="w", column=8, row=21)
-    entryPartD = tk.StringVar()
-    entryPartD = tk.Entry(main_frame, width=5, state="normal")
-    entryPartD.grid(column=8, row=21, sticky=E)
-    entryPartD.insert(0, "150")
-
-    values = ["K2", "K3", "FII", "FIII", "Other"]
-    combo = ttk.Combobox(main_frame, values=values, width=10)
-    combo.current(4)
-    combo.grid(column=8, row=22)
-    combo.bind("<<ComboboxSelected>>", detectorSelect)
-
-    buttonXml = tk.Button(main_frame, text="Inspect xml", command=inspectXml)
-    buttonXml.grid(column=8, row=23)
-
-    # btn = tk.Button(main_frame,text='Plot picks', command = plotPicks).grid(sticky="e", column=8, row=16)
-    row += 1
-
-    # Labels
-    lbl = Label(main_frame, text="Squares:")
-    lbl.grid(column=2, row=row)
-    lbl = Label(main_frame, text="Foil Holes:")
-    lbl.grid(column=4, row=row)
-    lbl = Label(main_frame, text="Holes:")
-    lbl.grid(column=6, row=row)
-    row += 1
-
-    # Listboxs for images
-    scrollbar = Scrollbar(main_frame)
-    scrollbar.grid(row=row, column=column + 3, rowspan=5, sticky=N + S)
-    sqlist = Listbox(main_frame, height=10, width=45, yscrollcommand=scrollbar.set)
-    sqlist.grid(row=row, column=column + 2, rowspan=5, sticky=E + W)
-    sqlist.bind("<<ListboxSelect>>", SquareSelect)
-    scrollbar.config(command=sqlist.yview)
-    column += 2
-
-    scrollbar = Scrollbar(main_frame)
-    scrollbar.grid(row=row, column=column + 3, rowspan=5, sticky=N + S)
-    foillist = Listbox(main_frame, height=10, width=45, yscrollcommand=scrollbar.set)
-    foillist.grid(row=row, column=column + 2, rowspan=5, sticky=E + W)
-    foillist.bind("<<ListboxSelect>>", FoilSelect)
-    scrollbar.config(command=foillist.yview)
-    column += 2
-
-    scrollbar = Scrollbar(main_frame)
-    scrollbar.grid(row=row, column=column + 3, rowspan=5, sticky=N + S)
-    miclist = Listbox(main_frame, height=10, width=45, yscrollcommand=scrollbar.set)
-    miclist.grid(row=row, column=column + 2, rowspan=5, sticky=E + W)
-    miclist.bind("<<ListboxSelect>>", MicSelect)
-    scrollbar.config(command=miclist.yview)
-    column += 2
-
-    # Populate lists
-    popSquares()
-
-    ## Square image
-    sqLoad = Image.open(
-        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testSq.jpeg"
-    )
-    sqLoad = sqLoad.resize((400, 400), Image.ANTIALIAS)
-    sqRender = ImageTk.PhotoImage(sqLoad)
-    imgSq = Label(main_frame, image=sqRender)
-    imgSq.image = sqRender
-    imgSq.place(x=0, y=395)
-
-    lbl = Label(main_frame, text="Current square selection:", anchor=W, justify=LEFT)
-    lbl.grid(sticky="w", column=2, row=10)
-    entrySq = tk.StringVar()
-    entrySq = tk.Entry(main_frame, width=45, state="normal")
-    entrySq.grid(column=2, row=11, sticky=W)
-
-    ## FoilHole image
-    fhLoad = RBGAImage(
-        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testFoil.jpeg"
-    )
-    fhLoad = fhLoad.resize((400, 400), Image.ANTIALIAS)
-    fhRender = ImageTk.PhotoImage(fhLoad)
-    imgFoil = Label(main_frame, image=fhRender)
-    imgFoil.image = fhRender
-    imgFoil.place(x=432, y=395)
-
-    lbl = Label(main_frame, text="Current foil selection:", anchor=W, justify=LEFT)
-    lbl.grid(sticky="w", column=4, row=10)
-    entryFoil = tk.StringVar()
-    entryFoil = tk.Entry(main_frame, width=45, state="normal")
-    entryFoil.grid(column=4, row=11, sticky=W)
-
-    ## Micrograph image
-    micLoad = RBGAImage(
-        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testMic.jpeg"
-    )
-    micLoad = micLoad.resize((400, 400), Image.ANTIALIAS)
-    micRender = ImageTk.PhotoImage(micLoad)
-    imgMic = Label(main_frame, image=micRender)
-    imgMic.image = micRender
-    imgMic.place(x=862, y=395)
-
-    lbl = Label(
-        main_frame, text="Current micrograph selection:", anchor=W, justify=LEFT
-    )
-    lbl.grid(sticky="w", column=6, row=10)
-    entryMic = tk.StringVar()
-    entryMic = tk.Entry(main_frame, width=45, state="normal")
-    entryMic.grid(column=6, row=11, sticky=W)
-
-    ## Particle pick overlay
-    parLoad = RBGAImage(
-        "/".join(epuanalysis.__file__.split("/")[:-1]) + "/../../data/testPart.png"
-    )
-    parLoad = parLoad.resize((400, 400), Image.ANTIALIAS)
-    micLoad.paste(parLoad, (0, 0), parLoad)
-    parRender = ImageTk.PhotoImage(micLoad)
-    imgMic = Label(main_frame, image=parRender)
-    imgMic.image = parRender
-    imgMic.place(x=862, y=395)
-
-    main_frame.mainloop()

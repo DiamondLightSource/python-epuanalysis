@@ -5,7 +5,13 @@ from typing import Callable, Dict, Optional, Tuple, Union
 
 
 class GUIFrame:
-    def __init__(self, title: str, geometry: str = "650x300", top_level: bool = False):
+    def __init__(
+        self,
+        title: str,
+        geometry: str = "650x300",
+        top_level: bool = False,
+        start_loop: bool = False,
+    ):
         if top_level:
             self.frame = tk.Toplevel()
         else:
@@ -14,8 +20,9 @@ class GUIFrame:
         self.frame.geometry(geometry)
         self._counter = count(start=1)
         self._entries: Dict[str, Union[tk.Entry, tk.StringVar]] = {}
-        self._generate_items()
-        self.frame.mainloop()
+        if start_loop:
+            self._generate_items()
+            self.frame.mainloop()
 
     def _generate_items(self):
         raise NotImplementedError(
@@ -43,13 +50,20 @@ class GUIFrame:
         return entry
 
     def _make_label(
-        self, row: int, text: str, var: Optional[tk.StringVar] = None
+        self,
+        row: int,
+        text: str,
+        column_entry: int = 1,
+        column_label: int = 0,
+        width: int = 40,
+        var: Optional[tk.StringVar] = None,
+        sticky: str = "",
     ) -> tk.Entry:
         if var:
             entry = tk.Entry(self.frame, width=40, textvariable=var)
         else:
             entry = tk.Entry(self.frame, width=40)
-        entry.grid(column=1, row=row)
+        entry.grid(column=column_entry, row=row, sticky=sticky)
         lbl = tk.Label(self.frame, text=text)
-        lbl.grid(column=0, row=row)
+        lbl.grid(column=column_label, row=row)
         return entry
