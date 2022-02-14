@@ -29,8 +29,6 @@
 import os
 import tkinter as tk
 import sys
-from tkinter import *
-from tkinter import ttk
 
 from PIL import ImageTk, Image
 from pathlib import Path
@@ -81,14 +79,14 @@ class Inspector(GUIFrame):
 
     def _generate_items(self):
         row = self.row()
-        lbl = Label(
+        lbl = tk.Label(
             self.frame,
             text="Show all Squares or only Squares found in star file:",
             anchor=tk.W,
             justify=tk.LEFT,
         )
         lbl.grid(column=2, row=row)
-        lbl = Label(
+        lbl = tk.Label(
             self.frame,
             text="Show all FoilHoles or only FoilHoles with particles:",
             anchor=tk.W,
@@ -226,7 +224,7 @@ class Inspector(GUIFrame):
         self._entries["entry_foil"].grid(column=4, row=11, sticky=tk.W)
 
         lbl = tk.Label(
-            self.frame, text="Current micrograph selection:", anchor=tk.W, justify=LEFT
+            self.frame, text="Current micrograph selection:", anchor=tk.W, justify=tk.LEFT
         )
         lbl.grid(sticky="w", column=6, row=10)
         self._entries["entry_mic"] = tk.Entry(self.frame, width=45, state="normal")
@@ -252,7 +250,7 @@ class Inspector(GUIFrame):
         sticky: str = "",
     ):
         radio_var = tk.StringVar()
-        rad = Radiobutton(
+        rad = tk.Radiobutton(
             self.frame,
             text=text,
             indicatoron=0,
@@ -317,13 +315,13 @@ class Inspector(GUIFrame):
         self._entries["square_list"].delete(0, tk.END)
         ## Populate square list box
         wc = len(self._image_structure["squares_all"])
-        lbl = Label(self.frame, text="Number of Squares: " + str(wc) + "  ")
+        lbl = tk.Label(self.frame, text="Number of Squares: " + str(wc) + "  ")
         lbl.grid(sticky="w", column=2, row=12)
 
-        lbl = Label(self.frame, text="Number of FoilHoles:        ")
+        lbl = tk.Label(self.frame, text="Number of FoilHoles:        ")
         lbl.grid(sticky="w", column=4, row=12)
 
-        lbl = Label(self.frame, text="Number of Micrographs:      ")
+        lbl = tk.Label(self.frame, text="Number of Micrographs:      ")
         lbl.grid(sticky="w", column=6, row=12)
 
     def _select(
@@ -376,7 +374,7 @@ class Inspector(GUIFrame):
             self._entries["foil_list"].insert(tk.END, item)
 
         ## Print useful information in label
-        lbl = Label(
+        lbl = tk.Label(
             self.frame,
             text="Number of FoilHoles: "
             + str(self._entries["foil_list"].size())
@@ -408,7 +406,7 @@ class Inspector(GUIFrame):
             self._entries["mic_list"].insert(tk.END, item[0])
         ## Print useful information in label
         # Number of FoilHoles images
-        lbl = Label(
+        lbl = tk.Label(
             self.frame, text=f"Number of Micrographs: {len(foil_hole.exposures)}"
         )
         lbl.grid(sticky="w", column=6, row=12)
