@@ -45,8 +45,8 @@ class Browser(GUIFrame):
             self.frame, length=200, style="black.Horizontal.TProgressbar"
         )
         self._bar["value"] = 0
-        self._generate_items()
         self._image_structure: dict = {}
+        self._generate_items()
         self.frame.mainloop()
 
     def _generate_items(self):
@@ -107,7 +107,7 @@ class Browser(GUIFrame):
             self.frame, text="Inspect EPU images", command=self.inspect
         )
         inspect_button.grid(column=2, row=self.row())
-        self._pop_path_fields()
+        self._pop_path_fields(run_analysis=True)
         self._pop_analysis_fields()
 
     def _browse_epu(self):
@@ -222,7 +222,7 @@ class Browser(GUIFrame):
         except IndexError:
             print("Data not present, although previous analysis performed...")
 
-    def _pop_path_fields(self):
+    def _pop_path_fields(self, run_analysis:bool = False):
         ## Populate fields if analysis already performed
         try:
             with open("./EPU_analysis/settings.dat") as f:
@@ -241,6 +241,8 @@ class Browser(GUIFrame):
             self._entries["epu"].insert(0, epu[1])
             self._entries["column"].insert(0, column[1])
             self._entries["suffix"].insert(0, suffix[1])
+            if run_analysis:
+                self.run()
         except IOError:
             print("Previous analysis not found")
 
