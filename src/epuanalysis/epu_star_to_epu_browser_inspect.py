@@ -40,12 +40,84 @@ import epuanalysis
 from epuanalysis.epu_xml_inspector import inspect_xml
 from epuanalysis.epu_plot_foilhole import plot_foilhole
 from epuanalysis.plot_coords import plot_coords
+from epuanalysis.frame import GUIFrame
 
-import glob
+from typing import Optional
 
 ###############################################################################
 
 current_grid_square = ""
+
+
+class Inspector(GUIFrame):
+    def __init__(self, title: str, geometry: str = "1420x820"):
+        super().__init__(title, geometry=geometry, top_level=True)
+
+    def _generate_items(self):
+        row = self.row()
+        lbl = Label(
+            self.frame,
+            text="Show all Squares or only Squares found in star file:",
+            anchor=tk.W,
+            justify=tk.LEFT,
+        )
+        lbl.grid(column=2, row=row)
+        lbl = Label(
+            self.frame,
+            text="Show all FoilHoles or only FoilHoles with particles:",
+            anchor=tk.W,
+            justify=tk.LEFT,
+        )
+        lbl.grid(column=4, row=row)
+
+        row = self.row()
+        self._entries["rad_square_selection"] = self._make_radio_button(
+            row, 2, "squares_all", "All"
+        )
+        self._make_radio_button(
+            row,
+            2,
+            "squares_used",
+            "Used",
+            variable=self._entries["rad_square_selection"],
+        )
+        self._make_radio_button(
+            row,
+            2,
+            "squares_not_used",
+            "Not used",
+            variable=self._entries["rad_square_selection"],
+        )
+
+        self._entries["rad_foil_selection"] = self._make_radio_button(
+            row, 4, "foilAll", "All"
+        )
+        self._make_radio_button(
+            row, 4, "foilUsed", "Used", variable=self._entries["rad_foil_selection"]
+        )
+        self._make_radio_button(
+            row, 4, "foilNot", "Not used", variable=self._entries["rad_foil_selection"]
+        )
+
+    def _make_radio_button(
+        self,
+        row: int,
+        column: int,
+        value: str,
+        text: str,
+        variable: Optional[tk.StringVar] = None,
+    ):
+        radio_var = tk.StringVar()
+        rad = Radiobutton(
+            self.frame,
+            text=text,
+            indicatoron=0,
+            value=value,
+            command=self.radio_click_sq,
+            variable=variable or radio_var,
+        )
+        rad.grid(sticky="w", column=column, row=row)
+        return variable or radio_var
 
 
 def inspect_squares(image_structure):

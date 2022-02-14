@@ -33,35 +33,19 @@ from tkinter.ttk import Progressbar
 
 from epuanalysis.tracking import EPUTracker
 from epuanalysis.epu_star_to_epu_browser_inspect import inspect_squares
-
-from typing import Callable, Dict, Optional, Tuple
-from itertools import count
+from epuanalysis.frame import GUIFrame
 
 ###############################################################################
 
 
-class Browser:
+class Browser(GUIFrame):
     def __init__(self, title: str, geometry: str = "650x300"):
-        # self.root = tk.Tk()
-        # self.root.withdraw()
-        self.frame = tk.Tk()
-        # self.frame = tk.Toplevel()
-        self.frame.title("EPU analysis from Relion star file")
-        self.frame.geometry("650x300")
-        self._counter = count(start=1)
+        super().__init__(title, geometry=geometry)
         self._bar: Progressbar = Progressbar(
             self.frame, length=200, style="black.Horizontal.TProgressbar"
         )
         self._bar["value"] = 0
-        self._entries: Dict[str, tk.Entry] = {}
         self._image_structure: dict = {}
-        self._generate_items()
-        self._pop_path_fields()
-        self._pop_analysis_fields()
-        self.frame.mainloop()
-
-    def row(self):
-        return next(self._counter)
 
     def _generate_items(self):
         epu_var = tk.StringVar()
@@ -121,35 +105,8 @@ class Browser:
             self.frame, text="Inspect EPU images", command=self.inspect
         )
         inspect_button.grid(column=2, row=self.row())
-
-    def _make_button(
-        self,
-        row: int,
-        text: str,
-        command: Callable,
-        var: Optional[tk.StringVar] = None,
-        columns: Tuple[int, int] = (1, 0),
-    ) -> tk.Entry:
-        if var:
-            entry = tk.Entry(self.frame, width=40, textvariable=var)
-        else:
-            entry = tk.Entry(self.frame, width=40, state="normal")
-        entry.grid(column=columns[0], row=row)
-        button = tk.Button(self.frame, text=text, command=command)
-        button.grid(column=columns[1], row=row)
-        return entry
-
-    def _make_label(
-        self, row: int, text: str, var: Optional[tk.StringVar] = None
-    ) -> tk.Entry:
-        if var:
-            entry = tk.Entry(self.frame, width=40, textvariable=var)
-        else:
-            entry = tk.Entry(self.frame, width=40)
-        entry.grid(column=1, row=row)
-        lbl = Label(self.frame, text=text)
-        lbl.grid(column=0, row=row)
-        return entry
+        self._pop_path_fields()
+        self._pop_analysis_fields()
 
     def _browse_epu(self):
         # Browse to dir
@@ -296,15 +253,15 @@ class Browser:
 
     def _open_total(self):
         # Browse to dir
-        self.open_file("./EPU_analysis/squares_all")
+        pass
 
     def _open_used(self):
         # Browse to dir
-        self.open_file("./EPU_analysis/squares_used")
+        pass
 
     def _open_not_used(self):
         # Browse to dir
-        self.open_file("./EPU_analysis/squares_not_used")
+        pass
 
     def inspect(self):
         # Browse to dir
@@ -312,4 +269,4 @@ class Browser:
 
 
 def run():
-    browser = Browser("EPU analysis from Relion star file")
+    Browser("EPU analysis from Relion star file")

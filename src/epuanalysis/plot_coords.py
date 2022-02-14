@@ -26,7 +26,11 @@ def plot_coords(
             xcol = list(block.find_loop("_rlnCoordinateX"))
             if xcol:
                 ycol = list(block.find_loop("_rlnCoordinateY"))
-                _coords = [(float(_x), float(_y)) for _x, _y, m in zip(xcol, ycol, mics) if micrograph.stem in m]
+                _coords = [
+                    (float(_x), float(_y))
+                    for _x, _y, m in zip(xcol, ycol, mics)
+                    if micrograph.stem in m
+                ]
                 return _coords
         return _coords
 
