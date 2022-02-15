@@ -150,8 +150,8 @@ class Inspector(GUIFrame):
             12,
             "x (px):",
             column_entry=10,
-            column_label=10,
-            width=5,
+            column_label=9,
+            width=3,
             var=mic_x_var,
             sticky="e",
         )
@@ -162,8 +162,8 @@ class Inspector(GUIFrame):
             13,
             "y (px):",
             column_entry=10,
-            column_label=10,
-            width=5,
+            column_label=9,
+            width=3,
             var=mic_y_var,
             sticky="e",
         )
@@ -174,8 +174,8 @@ class Inspector(GUIFrame):
             14,
             "D (px):",
             column_entry=10,
-            column_label=10,
-            width=5,
+            column_label=9,
+            width=3,
             var=mic_d_var,
             sticky="e",
         )
@@ -348,9 +348,12 @@ class Inspector(GUIFrame):
             self._entries[entry].insert(0, name)
 
     def _square_select(self, evt):
-        value = self._entries["square_list"].get(
-            self._entries["square_list"].curselection()
-        )
+        try:
+            value = self._entries["square_list"].get(
+                self._entries["square_list"].curselection()
+            )
+        except tk.TclError:
+            return
         imgpath = self._image_structure[self._entries["rad_square_selection"].get()][
             value
         ].grid_square_img
@@ -384,9 +387,12 @@ class Inspector(GUIFrame):
         self.clear_pick_no()
 
     def _foil_select(self, evt):
-        value = self._entries["foil_list"].get(
-            self._entries["foil_list"].curselection()
-        )
+        try:
+            value = self._entries["foil_list"].get(
+                self._entries["foil_list"].curselection()
+            )
+        except tk.TclError:
+            return
         foil_holes = [
             fh
             for fh in self._image_structure[
@@ -413,9 +419,12 @@ class Inspector(GUIFrame):
         self.clear_pick_no()
 
     def _mic_select(self, evt):
-        imgpath = self._entries["mic_list"].get(
-            self._entries["mic_list"].curselection()
-        )
+        try:
+            imgpath = self._entries["mic_list"].get(
+                self._entries["mic_list"].curselection()
+            )
+        except tk.TclError:
+            return
         self._select(imgpath, "img_mic", (862, 395), entry="entry_mic")
 
         # Report number of picked particles to GUI
