@@ -222,7 +222,7 @@ class Browser(GUIFrame):
         except IndexError:
             print("Data not present, although previous analysis performed...")
 
-    def _pop_path_fields(self, run_analysis:bool = False):
+    def _pop_path_fields(self, run_analysis: bool = False):
         ## Populate fields if analysis already performed
         try:
             with open("./EPU_analysis/settings.dat") as f:

@@ -224,7 +224,10 @@ class Inspector(GUIFrame):
         self._entries["entry_foil"].grid(column=4, row=11, sticky=tk.W)
 
         lbl = tk.Label(
-            self.frame, text="Current micrograph selection:", anchor=tk.W, justify=tk.LEFT
+            self.frame,
+            text="Current micrograph selection:",
+            anchor=tk.W,
+            justify=tk.LEFT,
         )
         lbl.grid(sticky="w", column=6, row=10)
         self._entries["entry_mic"] = tk.Entry(self.frame, width=45, state="normal")
