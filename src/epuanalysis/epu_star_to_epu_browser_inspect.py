@@ -40,6 +40,7 @@ from epuanalysis.epu_plot_foilhole import plot_foilhole
 from epuanalysis.plot_coords import plot_coords
 from epuanalysis.frame import GUIFrame
 from epuanalysis.tracking import FoilHole
+from epuanalysis.scale import ImageScale
 
 from typing import Callable, Optional, Tuple
 
@@ -53,7 +54,9 @@ class Inspector(GUIFrame):
         super().__init__(title, geometry=geometry, top_level=True)
         self._image_structure = image_structure
         self._current_grid_square: str = ""
-        self._current_foil_hole: FoilHole = ""
+        self._current_foil_hole: Optional[FoilHole] = None
+        self._current_foil_hole_scale: Optional[ImageScale] = None
+        self._foil_holes_list = []
         self.pick_state = tk.IntVar()
         self.pick_state.set(0)
         self._star: List[str] = []
@@ -334,11 +337,17 @@ class Inspector(GUIFrame):
         position: Tuple[int, int],
         next_level: str = "",
         entry: str = "",
+        img: Optional[Image.Image] = None,
     ) -> str:
-        load = RGBAImage(img_path)
-        width, height = load.size
-        ratio = width / height
-        load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
+        if img:
+            width, height = img.size
+            ratio = width / height
+            load = img.resize((400, int(400 / ratio)), Image.ANTIALIAS)
+        else:
+            load = RGBAImage(img_path)
+            width, height = load.size
+            ratio = width / height
+            load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
         render = ImageTk.PhotoImage(load)
         self._entries[img_name] = tk.Label(self.frame, image=render)
         self._entries[img_name].image = render
@@ -361,6 +370,7 @@ class Inspector(GUIFrame):
             value
         ].grid_square_img
         self._current_grid_square = value
+        self._current_grid_square_scale = ImageScale(Path(imgpath), detector_dimensions=(2048, 2048))
         self._select(
             imgpath,
             "img_square",
@@ -370,11 +380,10 @@ class Inspector(GUIFrame):
         )
 
         ## Populate list box
+        self._foil_holes_list = self._image_structure[self._entries["rad_square_selection"].get()][value].foil_holes
         for item in [
             fh.name
-            for fh in self._image_structure[
-                self._entries["rad_square_selection"].get()
-            ][value].foil_holes
+            for fh in self._foil_holes_list
         ]:
             ## Populate FoilHole list based on level of particle filtering selected
             self._entries["foil_list"].insert(tk.END, item)
@@ -405,6 +414,7 @@ class Inspector(GUIFrame):
         ]
         foil_hole = foil_holes[0]
         self._current_foil_hole = foil_hole
+        self._current_foil_hole_scale = ImageScale(foil_hole.foil_hole_img, above={self._current_grid_square_scale.image: self._current_grid_square_scale}, detector_dimensions=(2048, 2048))
         imgpath = foil_hole.foil_hole_img
         self._select(
             imgpath, "img_foil", (432, 395), next_level="mic_list", entry="entry_foil"
@@ -429,18 +439,49 @@ class Inspector(GUIFrame):
         except tk.TclError:
             return
         self._select(imgpath, "img_mic", (862, 395), entry="entry_mic")
+        mic_scale = ImageScale(Path(imgpath), above={self._current_foil_hole_scale.image: self._current_foil_hole_scale}, detector_dimensions=(2048, 2048))
+        marked_foil_hole = mic_scale.mark_image((mic_scale.cx, mic_scale.cy), scale_shift=1)
+        marked_grid_square = mic_scale.mark_image((mic_scale.cx, mic_scale.cy), scale_shift=2)
+        self._select(self._current_foil_hole.foil_hole_img, "img_foil", (432, 395), next_level="mic_list", entry="entry_foil", img=marked_foil_hole)
+        self._select(
+            self._current_grid_square_scale.image,
+            "img_square",
+            (0, 395),
+            next_level="foil_list",
+            entry="entry_square",
+            img=marked_grid_square,
+        )
+        # Populate listbox
+        for item in self._current_foil_hole.exposures:
+            self._entries["mic_list"].insert(tk.END, item[0])
+        ## Print useful information in label
+        # Number of FoilHoles images
+        #lbl = tk.Label(
+        #    self.frame, text=f"Number of Micrographs: {len(self._current_foil_hole.exposures)}"
+        #)
+        #lbl.grid(sticky="w", column=6, row=12)
+        #self.clear_pick_no()
+       
+        for item in [
+            fh.name
+            for fh in self._foil_holes_list
+        ]:
+            ## Populate FoilHole list based on level of particle filtering selected
+            self._entries["foil_list"].insert(tk.END, item)
 
         # Report number of picked particles to GUI
         self.clear_pick_no()
         num_particles = None
-        for mic, num_parts in self._current_foil_hole.exposures:
-            if str(mic) == imgpath:
-                num_particles = num_parts
-                break
+        if self._current_foil_hole:
+            for mic, num_parts in self._current_foil_hole.exposures:
+                if str(mic) == imgpath:
+                    num_particles = num_parts
+                    break
         lbl = tk.Label(self.frame, text=f"No. of particles: {num_particles}")
         lbl.grid(sticky="W", column=10, row=11)
         if self.pick_state.get():
             self._plot_picks(imgpath)
+
 
     def _plot_picks(self, mic_path: str):
         plot_coords(

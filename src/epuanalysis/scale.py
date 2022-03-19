@@ -107,6 +107,7 @@ class ImageScale:
         ).text
 
         self.spacing = float(pixel_size) * (self._detector_dimensions[0] / self.xextent)
+        print("retrieving xml data from", xml_path, pixel_size, self.spacing)
         self.cx = float(stage_position_X)
         self.cy = float(stage_position_Y)
 
@@ -121,8 +122,9 @@ class ImageScale:
         return (x, y)
 
     def mark_image(
-        self, coords: Tuple[float, float], scale_shift: int = 0, target_tag: Any = None
-    ):
+        self, coords: Tuple[float, float], scale_shift: int = 0, target_tag: Any = None, show: bool = False,
+    ) -> Image.Image:
+        print("physical coordinates:", coords)
         if not scale_shift:
             scale = self
         elif scale_shift > 0:
@@ -140,6 +142,10 @@ class ImageScale:
                 else:
                     scale = scale.below[target_tag]
         pix_coords = scale.get_pixel(coords)
+        print("centre:", scale.cx, scale.cy)
+        print("pixel size:", scale.spacing)
+        print("image extent:", scale.xextent)
+        print("pixel coordinates:", pix_coords)
         with Image.open(scale.image) as im:
             im.convert("RGB")
             d = ImageDraw.Draw(im)
@@ -152,7 +158,9 @@ class ImageScale:
                 outline="red",
                 width=2,
             )
-            im.show()
+            if show:
+                im.show()
+            return im
 
     def is_in(self, other_scale: ImageScale) -> bool:
         px, py = other_scale.get_pixel((self.cx, self.cy))
