@@ -3,6 +3,7 @@ from __future__ import annotations
 import mrcfile
 import xml.etree.ElementTree as ET
 
+from functools import lru_cache
 from pathlib import Path
 from PIL import Image, ImageDraw
 
@@ -13,12 +14,15 @@ class ImageScale:
     def __init__(
         self,
         image_path: Path,
+        name: str = "",
         spacing: Optional[float] = None,
         centre: Optional[Tuple[float, float]] = None,
         detector_dimensions: Optional[Tuple[int, int]] = None,
         above: Optional[Dict[Any, ImageScale]] = None,
         below: Optional[Dict[Any, ImageScale]] = None,
     ):
+        self.name = name or image_path
+
         self.above = {}
         if above:
             self.above.update(above)
@@ -72,6 +76,11 @@ class ImageScale:
             self.cy + 0.5 * self.spacing * self.yextent,
         )
 
+    @lru_cache(maxsize=1)
+    @property
+    def pil_image(self):
+        return Image.open(self.image)
+
     def add_below(self, below: Dict[Any, ImageScale]):
         self.below.update(below)
         for sc in below.values():
@@ -122,7 +131,11 @@ class ImageScale:
         return (x, y)
 
     def mark_image(
-        self, coords: Tuple[float, float], scale_shift: int = 0, target_tag: Any = None, show: bool = False,
+        self,
+        coords: Tuple[float, float],
+        scale_shift: int = 0,
+        target_tag: Any = None,
+        show: bool = False,
     ) -> Image.Image:
         print("physical coordinates:", coords)
         if not scale_shift:

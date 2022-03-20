@@ -1,7 +1,12 @@
 import tkinter as tk
+import os
+
+from PIL import ImageTk, Image
 
 from itertools import count
 from typing import Callable, Dict, Optional, Tuple, Union
+
+from epuanalysis.scale import ImageScale
 
 
 class GUIFrame:
@@ -20,6 +25,8 @@ class GUIFrame:
         self.frame.geometry(geometry)
         self._counter = count(start=1)
         self._entries: Dict[str, Union[tk.Entry, tk.StringVar]] = {}
+        self._image_scales: Dict[str, ImageScale] = {}
+        self._image_locs: Dict[str, Tuple[int, int]] = {}
         if start_loop:
             self._generate_items()
             self.frame.mainloop()
@@ -67,3 +74,34 @@ class GUIFrame:
         lbl = tk.Label(self.frame, text=text)
         lbl.grid(column=column_label, row=row)
         return entry
+
+    def add_scale(self, imsc: ImageScale, imloc: Tuple[int, int]):
+        self._image_scales[imsc.name] = imsc
+        self._image_locs[imsc.name] = imloc
+
+    def draw_scale(
+        self, imname: str, entry: str = "", img_override: Optional[Image.Image] = None
+    ):
+        load = img_override or self._image_scales[imname].pil_image
+        width, height = load.size
+        ratio = width / height
+        load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(load)
+        self._entries[imname] = tk.Label(self.frame, image=render)
+        self._entries[imname].image = render
+        self._entries[imname].place(
+            x=self._image_locs[imname][0], y=self._image_locs[imname][1]
+        )
+        next_levels = self._image_scales[imname].below.values()
+        for nl in next_levels:
+            self._entries[nl.name].delete(0, tk.END)
+        if entry:
+            name = os.path.basename(self._image_scales[imname].image)
+            self._entries[entry].delete(0, tk.END)
+            self._entries[entry].insert(0, name)
+        for k, abv in self.above.items():
+            curr_scale = self._image_scales[imname]
+            iov = curr_scale.mark_image(
+                (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k
+            )
+            self.draw_scale(abv.name, img_override=iov)
