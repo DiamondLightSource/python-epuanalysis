@@ -445,7 +445,6 @@ class Inspector(GUIFrame):
             )
         except tk.TclError:
             return
-        # self._select(imgpath, "img_mic", (862, 395), entry="entry_mic")
         mic_scale = ImageScale(
             Path(imgpath),
             name="img_mic",

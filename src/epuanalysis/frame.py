@@ -96,12 +96,7 @@ class GUIFrame:
         self._entries[imname].place(
             x=self._image_locs[imname][0], y=self._image_locs[imname][1]
         )
-        # next_levels = self._image_scales[imname].below.values()
-        # for nl in next_levels:
-        #    try:
-        #        self._entries[nl.name].delete(0, tk.END)
-        #    except AttributeError:
-        #        pass
+     
         if reset_entry:
             self._entries[reset_entry].delete(0, tk.END)
         if entry:
