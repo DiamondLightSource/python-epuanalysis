@@ -157,12 +157,12 @@ class ImageScale:
         with Image.open(scale.image) as im:
             im.convert("RGB")
             d = ImageDraw.Draw(im)
-            circle_size = int(0.015 * scale.xextent)
-            d.ellipse(
-                [
-                    (pix_coords[0] - circle_size, pix_coords[1] - circle_size),
-                    (pix_coords[0] + circle_size, pix_coords[1] + circle_size),
-                ],
+            half_square_width = int(0.5*(self.spacing/scale.spacing) * self.xextent)
+            upper_left = (pix_coords[0] - half_square_width, pix_coords[1] - half_square_width)
+            lower_right = (pix_coords[0] + half_square_width, pix_coords[1] + half_square_width)
+          
+            d.rectangle(
+                [upper_left, lower_right],
                 outline="red",
                 width=2,
             )
