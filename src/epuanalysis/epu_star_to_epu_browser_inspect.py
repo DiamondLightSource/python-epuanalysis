@@ -442,7 +442,7 @@ class Inspector(GUIFrame):
     def _mic_select(self, evt):
         try:
             imgpath = self._entries["mic_list"].get(
-                self._entries["mic_list"].curselection()s
+                self._entries["mic_list"].curselection()
             )
         except tk.TclError:
             return

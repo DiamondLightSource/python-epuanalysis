@@ -76,8 +76,8 @@ class ImageScale:
             self.cy + 0.5 * self.spacing * self.yextent,
         )
 
-    @lru_cache(maxsize=1)
     @property
+    @lru_cache(maxsize=1)
     def pil_image(self):
         return Image.open(self.image)
 
