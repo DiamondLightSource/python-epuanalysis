@@ -99,7 +99,7 @@ class ImageScale:
             "so": "http://schemas.datacontract.org/2004/07/Fei.SharedObjects",
             "g": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
             "s": "http://schemas.datacontract.org/2004/07/Fei.Applications.Common.Services",
-            "a": "http://schemas.datacontract.org/2004/07/System.Drawing",
+            "a": "http://schemas.datacontract.org/2004/07/Fei.Types",
         }
         xml_path = self.image.with_suffix(".xml")
         tree = ET.parse(xml_path)
@@ -114,6 +114,22 @@ class ImageScale:
 
         pixel_size = root.find(
             "so:SpatialScale/so:pixelSize/so:x/so:numericValue", ns
+        ).text
+
+        image_shift_x = root.find(
+            "so:microscopeData/so:optics/so:ImageShift/a:_x", ns
+        ).text
+        image_shift_y = root.find(
+            "so:microscopeData/so:optics/so:ImageShift/a:_y", ns
+        ).text
+        beam_shift_x = root.find(
+            "so:microscopeData/so:optics/so:BeamShift/a:_x", ns
+        ).text
+        beam_shift_y = root.find(
+            "so:microscopeData/so:optics/so:BeamShift/a:_y", ns
+        ).text
+        beam_diameter = root.find(
+            "so:microscopeData/so:optics/so:BeamDiameter", ns
         ).text
 
         self.spacing = float(pixel_size) * (self._detector_dimensions[0] / self.xextent)
