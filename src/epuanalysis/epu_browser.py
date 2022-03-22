@@ -83,24 +83,22 @@ class Browser(GUIFrame):
 
         ## Information and analysis
         row = self.row()
-        total_lbl = Label(self.frame, text="Total squares:")
-        total_lbl.grid(column=0, row=row)
-        self._entries["total"] = self._make_button(
-            row, "View all", self._open_total, columns=(1, 2)
+        self._entries["total"] = self._make_label(
+            row, "Total squares:", column_entry=1, column_label=0
         )
 
         row = self.row()
         used_lbl = Label(self.frame, text="Used:")
         used_lbl.grid(column=0, row=row)
-        self._entries["used"] = self._make_button(
-            row, "View used", self._open_used, columns=(1, 2)
+        self._entries["used"] = self._make_label(
+            row, "Used:", column_entry=1, column_label=0
         )
 
         row = self.row()
         not_used_lbl = Label(self.frame, text="Not used:")
         not_used_lbl.grid(column=0, row=row)
-        self._entries["unused"] = self._make_button(
-            row, "View not used", self._open_not_used, columns=(1, 2)
+        self._entries["unused"] = self._make_label(
+            row, "Not used:", column_entry=1, column_label=0
         )
 
         inspect_button = tk.Button(
@@ -222,7 +220,7 @@ class Browser(GUIFrame):
         except IndexError:
             print("Data not present, although previous analysis performed...")
 
-    def _pop_path_fields(self, run_analysis:bool = False):
+    def _pop_path_fields(self, run_analysis: bool = False):
         ## Populate fields if analysis already performed
         try:
             with open("./EPU_analysis/settings.dat") as f:
