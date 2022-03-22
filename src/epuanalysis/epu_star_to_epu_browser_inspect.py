@@ -372,7 +372,11 @@ class Inspector(GUIFrame):
             Path(imgpath), name="img_square", detector_dimensions=(2048, 2048)
         )
         self.add_scale(self._current_grid_square_scale, (0, 395))
-        self.draw_scale(self._current_grid_square_scale.name, entry="entry_square", reset_entry="foil_list")
+        self.draw_scale(
+            self._current_grid_square_scale.name,
+            entry="entry_square",
+            reset_entry="foil_list",
+        )
 
         ## Populate list box
         self._foil_holes_list = self._image_structure[
@@ -417,7 +421,11 @@ class Inspector(GUIFrame):
             detector_dimensions=(2048, 2048),
         )
         self.add_scale(self._current_foil_hole_scale, (432, 395))
-        self.draw_scale(self._current_foil_hole_scale.name, entry="entry_foil", reset_entry="mic_list")
+        self.draw_scale(
+            self._current_foil_hole_scale.name,
+            entry="entry_foil",
+            reset_entry="mic_list",
+        )
 
         # Populate listbox
         for item in foil_hole.exposures:
@@ -447,15 +455,6 @@ class Inspector(GUIFrame):
 
         self.add_scale(mic_scale, (862, 395))
         self.draw_scale(mic_scale.name, entry="entry_mic")
-
-       
-        # Populate listbox
-        for item in self._current_foil_hole.exposures:
-            self._entries["mic_list"].insert(tk.END, item[0])
-
-        for item in [fh.name for fh in self._foil_holes_list]:
-            ## Populate FoilHole list based on level of particle filtering selected
-            self._entries["foil_list"].insert(tk.END, item)
 
         # Report number of picked particles to GUI
         self.clear_pick_no()

@@ -80,7 +80,11 @@ class GUIFrame:
         self._image_locs[imsc.name] = imloc
 
     def draw_scale(
-        self, imname: str, entry: str = "", reset_entry: str = "", img_override: Optional[Image.Image] = None
+        self,
+        imname: str,
+        entry: str = "",
+        reset_entry: str = "",
+        img_override: Optional[Image.Image] = None,
     ):
         load = img_override or self._image_scales[imname].pil_image
         width, height = load.size
@@ -92,8 +96,8 @@ class GUIFrame:
         self._entries[imname].place(
             x=self._image_locs[imname][0], y=self._image_locs[imname][1]
         )
-        #next_levels = self._image_scales[imname].below.values()
-        #for nl in next_levels:
+        # next_levels = self._image_scales[imname].below.values()
+        # for nl in next_levels:
         #    try:
         #        self._entries[nl.name].delete(0, tk.END)
         #    except AttributeError:

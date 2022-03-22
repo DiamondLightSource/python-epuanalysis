@@ -91,7 +91,7 @@ class ImageScale:
         for sc in above.values():
             sc.below.update({self.image: self})
 
-    # @lru_cache(maxsize=1)
+    @lru_cache(maxsize=1)
     def retrieve_xml_data(self):
         ns = {
             "p": "http://schemas.datacontract.org/2004/07/Applications.Epu.Persistence",
