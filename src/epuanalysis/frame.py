@@ -80,7 +80,7 @@ class GUIFrame:
         self._image_locs[imsc.name] = imloc
 
     def draw_scale(
-        self, imname: str, entry: str = "", img_override: Optional[Image.Image] = None
+        self, imname: str, entry: str = "", reset_entry: str = "", img_override: Optional[Image.Image] = None
     ):
         load = img_override or self._image_scales[imname].pil_image
         width, height = load.size
@@ -92,14 +92,19 @@ class GUIFrame:
         self._entries[imname].place(
             x=self._image_locs[imname][0], y=self._image_locs[imname][1]
         )
-        next_levels = self._image_scales[imname].below.values()
-        for nl in next_levels:
-            self._entries[nl.name].delete(0, tk.END)
+        #next_levels = self._image_scales[imname].below.values()
+        #for nl in next_levels:
+        #    try:
+        #        self._entries[nl.name].delete(0, tk.END)
+        #    except AttributeError:
+        #        pass
+        if reset_entry:
+            self._entries[reset_entry].delete(0, tk.END)
         if entry:
             name = os.path.basename(self._image_scales[imname].image)
             self._entries[entry].delete(0, tk.END)
             self._entries[entry].insert(0, name)
-        for k, abv in self.above.items():
+        for k, abv in self._image_scales[imname].above.items():
             curr_scale = self._image_scales[imname]
             iov = curr_scale.mark_image(
                 (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k

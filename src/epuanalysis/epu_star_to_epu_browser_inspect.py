@@ -371,14 +371,8 @@ class Inspector(GUIFrame):
         self._current_grid_square_scale = ImageScale(
             Path(imgpath), name="img_square", detector_dimensions=(2048, 2048)
         )
-        self.draw_scale(self._current_grid_square_scale, entry="entry_square")
-        # self._select(
-        #    imgpath,
-        #    "img_square",
-        #    (0, 395),
-        #    next_level="foil_list",
-        #    entry="entry_square",
-        # )
+        self.add_scale(self._current_grid_square_scale, (0, 395))
+        self.draw_scale(self._current_grid_square_scale.name, entry="entry_square", reset_entry="foil_list")
 
         ## Populate list box
         self._foil_holes_list = self._image_structure[
@@ -422,11 +416,8 @@ class Inspector(GUIFrame):
             },
             detector_dimensions=(2048, 2048),
         )
-        self.draw_scale(self._current_foil_hole_scale, entry="entry_foil")
-        # imgpath = foil_hole.foil_hole_img
-        # self._select(
-        #    imgpath, "img_foil", (432, 395), next_level="mic_list", entry="entry_foil"
-        # )
+        self.add_scale(self._current_foil_hole_scale, (432, 395))
+        self.draw_scale(self._current_foil_hole_scale.name, entry="entry_foil", reset_entry="mic_list")
 
         # Populate listbox
         for item in foil_hole.exposures:
@@ -454,40 +445,13 @@ class Inspector(GUIFrame):
             detector_dimensions=(2048, 2048),
         )
 
-        self.draw_scale(mic_scale, entry="entry_mic")
+        self.add_scale(mic_scale, (862, 395))
+        self.draw_scale(mic_scale.name, entry="entry_mic")
 
-        # marked_foil_hole = mic_scale.mark_image(
-        #     (mic_scale.cx, mic_scale.cy), scale_shift=1
-        # )
-        # marked_grid_square = mic_scale.mark_image(
-        #     (mic_scale.cx, mic_scale.cy), scale_shift=2
-        # )
-        # self._select(
-        #     self._current_foil_hole.foil_hole_img,
-        #     "img_foil",
-        #     (432, 395),
-        #     next_level="mic_list",
-        #     entry="entry_foil",
-        #     img=marked_foil_hole,
-        # )
-        # self._select(
-        #     self._current_grid_square_scale.image,
-        #     "img_square",
-        #     (0, 395),
-        #     next_level="foil_list",
-        #     entry="entry_square",
-        #     img=marked_grid_square,
-        # )
+       
         # Populate listbox
         for item in self._current_foil_hole.exposures:
             self._entries["mic_list"].insert(tk.END, item[0])
-        ## Print useful information in label
-        # Number of FoilHoles images
-        # lbl = tk.Label(
-        #    self.frame, text=f"Number of Micrographs: {len(self._current_foil_hole.exposures)}"
-        # )
-        # lbl.grid(sticky="w", column=6, row=12)
-        # self.clear_pick_no()
 
         for item in [fh.name for fh in self._foil_holes_list]:
             ## Populate FoilHole list based on level of particle filtering selected
