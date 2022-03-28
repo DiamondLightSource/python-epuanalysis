@@ -101,9 +101,7 @@ def inspect_xml():
         # Load micrograph
         load = RBGAImage(imgpath)
         width, height = load.size
-        print(width, height)
         ratio = width / height
-        print(ratio)
         load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
         micRender = ImageTk.PhotoImage(load)
         imgMic = Label(main_frame, image=micRender)

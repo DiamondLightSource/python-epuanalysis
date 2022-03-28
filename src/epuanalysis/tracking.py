@@ -34,12 +34,14 @@ class EPUTracker:
         suffix: str = "",
         starfile: Optional[pathlib.Path] = None,
         column: str = "",
+        atlas: str = "",
     ):
         self.basepath = basepath
         self.epudir = epudir
         self.suffix = suffix
         self.starfile = starfile
         self.column = column
+        self.atlas = atlas
         self.outdir = self.basepath / "EPU_analysis"
         self.counted_micrographs = Counter([])
         if self.outdir.is_dir():
@@ -66,6 +68,7 @@ class EPUTracker:
             sf.write(f"EPU: {self.epudir}\n")
             sf.write(f"Column: {self.column}\n")
             sf.write(f"Suffix: {self.suffix}\n")
+            sf.write(f"Atlas: {self.atlas}\n")
         (self.outdir / "star").mkdir()
 
     @staticmethod

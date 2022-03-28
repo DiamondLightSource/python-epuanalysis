@@ -9,6 +9,8 @@ from PIL import Image, ImageDraw
 
 from typing import Any, Dict, Optional, Tuple
 
+# from epuanalysis.frame import GUIFrame
+
 
 class ImageScale:
     def __init__(
@@ -20,8 +22,14 @@ class ImageScale:
         detector_dimensions: Optional[Tuple[int, int]] = None,
         above: Optional[Dict[Any, ImageScale]] = None,
         below: Optional[Dict[Any, ImageScale]] = None,
+        frame = None,
+        flip: Tuple[bool, bool] = (False, False),
     ):
         self.name = name or image_path
+
+        self._frame = frame
+
+        self._flip = flip
 
         self.above = {}
         if above:
@@ -78,8 +86,16 @@ class ImageScale:
 
     @property
     @lru_cache(maxsize=1)
-    def pil_image(self):
-        return Image.open(self.image)
+    def pil_image(self) -> Image.Image:
+        if not self._flip:
+            im = Image.open(self.image)
+            return im.convert("RGBA")
+        im = Image.open(self.image)
+        if self._flip[0]:
+            im = im.transpose(Image.FLIP_LEFT_RIGHT)
+        if self._flip[1]:
+            im = im.transpose(Image.FLIP_TOP_BOTTOM)
+        return im.convert("RGBA")
 
     def add_below(self, below: Dict[Any, ImageScale]):
         self.below.update(below)
@@ -170,12 +186,18 @@ class ImageScale:
                 else:
                     scale = scale.below[target_tag]
         pix_coords = scale.get_pixel(coords)
-        with Image.open(scale.image) as im:
+        with scale.pil_image as im:
             im.convert("RGB")
             d = ImageDraw.Draw(im)
+
             half_square_width = int(0.5*(self.spacing/scale.spacing) * self.xextent)
-            upper_left = (pix_coords[0] - half_square_width, pix_coords[1] - half_square_width)
-            lower_right = (pix_coords[0] + half_square_width, pix_coords[1] + half_square_width)
+
+            ulx = (-pix_coords[0] + half_square_width + scale.xextent) if scale._flip[0] else pix_coords[0] - half_square_width
+            uly = (-pix_coords[1] + half_square_width + scale.yextent) if scale._flip[1] else pix_coords[1] - half_square_width
+            upper_left = (ulx, uly)
+            lrx = (-pix_coords[0] - half_square_width + scale.xextent) if scale._flip[0] else pix_coords[0] + half_square_width
+            lry = (-pix_coords[1] - half_square_width + scale.yextent) if scale._flip[1] else pix_coords[1] + half_square_width
+            lower_right = (lrx, lry)
           
             d.rectangle(
                 [upper_left, lower_right],

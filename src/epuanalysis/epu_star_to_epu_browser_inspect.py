@@ -25,6 +25,7 @@
 # TO DO:
 # 1) Remove dependancy on global variables
 # 2) Only display jpg in listboxes that have associated _FoilHoles.dat
+from __future__ import annotations
 
 import os
 import tkinter as tk
@@ -47,10 +48,51 @@ def RGBAImage(path):
     return Image.open(path).convert("RGBA")
 
 
+class AtlasFrame(GUIFrame):
+    def __init__(self, title: str, atlas: Path, inspector: Inspector, tile_search: bool = False, geometry: str = "880x420"):
+        super().__init__(title, geometry=geometry, top_level=True)
+        self._inspector = inspector
+        self._atlas = atlas
+
+        atlas_scale = ImageScale(
+            self._atlas,
+            name="img_atlas",
+            below={
+                inspector._current_grid_square_scale.image: inspector._current_grid_square_scale
+            },
+            detector_dimensions=(2048, 2048),
+            frame=self,
+            flip=(False, False),
+        )
+        self.add_scale(atlas_scale, (0, 0))
+        if tile_search:
+            for tile in atlas.parent.glob("Tile*.jpg"):
+                tmp_img = ImageScale(tile)
+                if inspector._current_grid_square_scale.is_in(tmp_img):
+                    print(f"Grid square found in {tile}")
+                    tile_scale = ImageScale(
+                        tile,
+                        name="img_tile",
+                        below={
+                            inspector._current_grid_square_scale.image: inspector._current_grid_square_scale
+                        },
+                        detector_dimensions=(2048, 2048),
+                        frame=self,
+                        flip=(False, False),
+                    )
+                    self.add_scale(tile_scale, (460, 0))
+                    break
+                    # open_atlas_gui(tile, inspector, frame_title="EPU Atlas tile")
+        inspector.draw_scale(
+            "img_square",
+        )
+
+
 class Inspector(GUIFrame):
-    def __init__(self, title: str, image_structure: dict, geometry: str = "1420x820"):
+    def __init__(self, title: str, image_structure: dict, atlas: Optional[Path] = None, geometry: str = "1420x1420"):
         super().__init__(title, geometry=geometry, top_level=True)
         self._image_structure = image_structure
+        self._atlas = atlas
         self._current_grid_square: str = ""
         self._current_foil_hole: Optional[FoilHole] = None
         self._current_foil_hole_scale: Optional[ImageScale] = None
@@ -233,6 +275,24 @@ class Inspector(GUIFrame):
         lbl.grid(sticky="w", column=6, row=10)
         self._entries["entry_mic"] = tk.Entry(self.frame, width=45, state="normal")
         self._entries["entry_mic"].grid(column=6, row=11, sticky=tk.W)
+
+        self._entries["atlas"] = self._make_button(5, "open Atlas view", self._atlas_select, columns=(10,9))
+
+        #self._entries["atlas"] = tk.Button(self.frame, text="Open Atlas view", command=self._atlas_select)
+        #self._entries["atlas"].grid(column=10, row=5)
+
+    def _atlas_select(self):
+        # atlas = self._entries["atlas"].get()
+        open_atlas_gui(self._atlas, self, tile_search=True)
+        # load = RGBAImage(atlas)
+        # width, height = load.size
+        # ratio = width / height
+        # load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
+        # render = ImageTk.PhotoImage(load)
+        # self._entries[atlas] = tk.Label(self.frame, image=render)
+        # self._entries[atlas].image = render
+        # self._entries[atlas].place(x=1092, y=395)
+
 
     def _make_scrollbar(self, row: int, column: int, command: Callable) -> tk.Listbox:
         scrollbar = tk.Scrollbar(self.frame)
@@ -419,6 +479,7 @@ class Inspector(GUIFrame):
                 self._current_grid_square_scale.image: self._current_grid_square_scale
             },
             detector_dimensions=(2048, 2048),
+            flip=(True, True),
         )
         self.add_scale(self._current_foil_hole_scale, (432, 395))
         self.draw_scale(
@@ -496,7 +557,10 @@ class Inspector(GUIFrame):
         lbl.grid(sticky="W", column=8, row=11)
 
 
-def open_inspection_gui(image_structure):
+def open_inspection_gui(image_structure: dict, atlas: Optional[Path] = None):
     inspector = Inspector(
-        "EPU analysis from Relion star file", image_structure=image_structure
+        "EPU analysis from Relion star file", image_structure=image_structure, atlas=atlas
     )
+
+def open_atlas_gui(atlas_path: Path, associated_inspector: Inspector, tile_search: bool = False, frame_title: str = "EPU Atlas"):
+    atlas_inspector = AtlasFrame(frame_title, atlas=atlas_path, inspector=associated_inspector, tile_search=tile_search)

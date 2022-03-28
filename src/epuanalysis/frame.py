@@ -104,8 +104,15 @@ class GUIFrame:
             self._entries[entry].delete(0, tk.END)
             self._entries[entry].insert(0, name)
         for k, abv in self._image_scales[imname].above.items():
-            curr_scale = self._image_scales[imname]
-            iov = curr_scale.mark_image(
-                (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k
-            )
-            self.draw_scale(abv.name, img_override=iov)
+            if not abv._frame:
+                curr_scale = self._image_scales[imname]
+                iov = curr_scale.mark_image(
+                    (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k
+                )
+                self.draw_scale(abv.name, img_override=iov)
+            else:
+                curr_scale = self._image_scales[imname]
+                iov = curr_scale.mark_image(
+                    (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k
+                )
+                abv._frame.draw_scale(abv.name, img_override=iov)

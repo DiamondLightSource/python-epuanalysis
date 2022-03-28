@@ -46,6 +46,7 @@ class Browser(GUIFrame):
         )
         self._bar["value"] = 0
         self._image_structure: dict = {}
+        self._atlas = None
         self._generate_items()
         self.frame.mainloop()
 
@@ -68,6 +69,11 @@ class Browser(GUIFrame):
         suffix_var = tk.StringVar()
         self._entries["suffix"] = self._make_label(
             self.row(), "Data suffix:", var=suffix_var
+        )
+
+        atlas_var = tk.StringVar()
+        self._entries["atlas"] = self._make_label(
+            self.row(), "Atlas jpg:", var=atlas_var
         )
 
         self._bar.grid(column=1, row=self.row())
@@ -112,10 +118,13 @@ class Browser(GUIFrame):
 
     def _browse_epu(self):
         # Browse to dir
-        self.frame.filename = filedialog.askdirectory(
+        #self.frame.filename = filedialog.askdirectory(
+        #    initialdir="~", title="Select directory"
+        #)
+        #epuin = self.frame.filename
+        epuin = filedialog.askdirectory(
             initialdir="~", title="Select directory"
         )
-        epuin = self.frame.filename
         # delete content from position 0 to end
         self._entries["epu"].delete(0, tk.END)
         # insert new_text at position 0
@@ -123,12 +132,17 @@ class Browser(GUIFrame):
 
     def _browse_star(self):
         # Browse to file
-        self.frame.filename = filedialog.askopenfilename(
+        #self.frame.filename = filedialog.askopenfilename(
+        #    initialdir="~",
+        #    title="Select file",
+        #    filetypes=(("all files", "*.*"), ("star files", "*.star")),
+        #)
+        #starin = self.frame.filename
+        starin = filedialog.askopenfilename(
             initialdir="~",
             title="Select file",
             filetypes=(("all files", "*.*"), ("star files", "*.star")),
         )
-        starin = self.frame.filename
         # delete content from position 0 to end
         self._entries["star"].delete(0, tk.END)
         # insert new_text at position 0
@@ -143,6 +157,7 @@ class Browser(GUIFrame):
         self._entries["epu"].delete(0, tk.END)
         self._entries["column"].delete(0, tk.END)
         self._entries["suffix"].delete(0, tk.END)
+        self._entries["atlas"].delete(0, tk.END)
 
     def _clear_analysis(self):
         self._entries["total"].delete(0, tk.END)
@@ -155,6 +170,7 @@ class Browser(GUIFrame):
         epu = self._entries["epu"].get()
         column = self._entries["column"].get()
         suffix = self._entries["suffix"].get()
+        atlas = self._entries["atlas"].get()
         # If entries empty then fill with none
         if not epu:
             self._entries["epu"].insert(0, "None")
@@ -167,16 +183,21 @@ class Browser(GUIFrame):
         if not suffix:
             self._entries["suffix"].insert(0, "None")
             suffix = None
+        if not atlas:
+            self._entries["atlas"].insert(0, "None")
+            atlas = None
         if star is None:
             starpath = None
         else:
             starpath = Path(star)
+        self._atlas = atlas
         tracker = EPUTracker(
             Path("."),
             Path(epu),
             suffix=suffix,
             starfile=starpath,
             column=column,
+            atlas=atlas,
         )
         self._image_structure = tracker.track()
         self._pop_analysis_fields()
@@ -188,7 +209,6 @@ class Browser(GUIFrame):
                 print("Populating fields with previous analysis")
                 self._clear_analysis()
                 for line in f:
-                    print(line)
                     if "Total:" in line:
                         total = line.strip().split()
                     if "Used:" in line:
@@ -231,16 +251,19 @@ class Browser(GUIFrame):
                 for line in f:
                     if "Star" in line:
                         star = line.strip().split()
-                    if "EPU" in line:
+                    if line.startswith("EPU"):
                         epu = line.strip().split()
                     if "Column" in line:
                         column = line.strip().split()
                     if "Suffix" in line:
                         suffix = line.strip().split()
+                    if "Atlas" in line:
+                        atlas = line.strip().split()
             self._entries["star"].insert(0, star[1])
             self._entries["epu"].insert(0, epu[1])
             self._entries["column"].insert(0, column[1])
             self._entries["suffix"].insert(0, suffix[1])
+            self._entries["atlas"].insert(0, atlas[1])
             if run_analysis:
                 self.run()
         except IOError:
@@ -269,7 +292,7 @@ class Browser(GUIFrame):
 
     def inspect(self):
         # Browse to dir
-        open_inspection_gui(self._image_structure)
+        open_inspection_gui(self._image_structure, atlas=Path(self._atlas))
 
 
 def run():
