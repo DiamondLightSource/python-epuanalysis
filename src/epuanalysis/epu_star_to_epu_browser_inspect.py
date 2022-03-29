@@ -82,7 +82,6 @@ class AtlasFrame(GUIFrame):
                     )
                     self.add_scale(tile_scale, (460, 0))
                     break
-                    # open_atlas_gui(tile, inspector, frame_title="EPU Atlas tile")
         inspector.draw_scale(
             "img_square",
         )
@@ -276,23 +275,12 @@ class Inspector(GUIFrame):
         self._entries["entry_mic"] = tk.Entry(self.frame, width=45, state="normal")
         self._entries["entry_mic"].grid(column=6, row=11, sticky=tk.W)
 
-        self._entries["atlas"] = self._make_button(5, "open Atlas view", self._atlas_select, columns=(10,9))
+        button = tk.Button(self.frame, text="Open Atlas view", command=self._atlas_select)
+        button.grid(column=10, row=5)
 
-        #self._entries["atlas"] = tk.Button(self.frame, text="Open Atlas view", command=self._atlas_select)
-        #self._entries["atlas"].grid(column=10, row=5)
-
-    def _atlas_select(self):
-        # atlas = self._entries["atlas"].get()
-        open_atlas_gui(self._atlas, self, tile_search=True)
-        # load = RGBAImage(atlas)
-        # width, height = load.size
-        # ratio = width / height
-        # load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
-        # render = ImageTk.PhotoImage(load)
-        # self._entries[atlas] = tk.Label(self.frame, image=render)
-        # self._entries[atlas].image = render
-        # self._entries[atlas].place(x=1092, y=395)
-
+    def _atlas_select(self) -> AtlasFrame:
+        atlas_inspector = AtlasFrame("EPU Atlas", atlas=self._atlas, inspector=self, tile_search=True)
+        return atlas_inspector
 
     def _make_scrollbar(self, row: int, column: int, command: Callable) -> tk.Listbox:
         scrollbar = tk.Scrollbar(self.frame)
@@ -561,6 +549,3 @@ def open_inspection_gui(image_structure: dict, atlas: Optional[Path] = None):
     inspector = Inspector(
         "EPU analysis from Relion star file", image_structure=image_structure, atlas=atlas
     )
-
-def open_atlas_gui(atlas_path: Path, associated_inspector: Inspector, tile_search: bool = False, frame_title: str = "EPU Atlas"):
-    atlas_inspector = AtlasFrame(frame_title, atlas=atlas_path, inspector=associated_inspector, tile_search=tile_search)
