@@ -17,13 +17,13 @@ class Micrograph(NamedTuple):
 class FoilHole(NamedTuple):
     name: str
     foil_hole_img: pathlib.Path
-    exposures: List[pathlib.Path]
+    exposures: List[Tuple[pathlib.Path, int]]
 
 
 class GridSquare(NamedTuple):
     name: str
     grid_square_img: pathlib.Path
-    foil_holes: List[Tuple[FoilHole, int]]
+    foil_holes: List[FoilHole]
 
 
 class EPUTracker:
@@ -147,12 +147,12 @@ class EPUTracker:
         return structured_imgs
 
     def track(self) -> dict:
+        all_grid_squares = set(self.epu_images.keys())
         if self.starfile:
             mics = self.extract(self.basepath / self.starfile)
             used_grid_squares = {m.grid_square for m in mics}
         else:
             used_grid_squares = all_grid_squares
-        all_grid_squares = set(self.epu_images.keys())
 
         gui_directories = ["squares_all", "squares_used", "squares_not_used"]
         grid_square_names = {
