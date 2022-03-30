@@ -136,6 +136,9 @@ class EPUTracker:
                                 num_parts = np
                                 break
                         exposures.append((p, num_parts))
+                if fh_data.get(fh_name):
+                    if fh_data[fh_name].foil_hole_img.stat().st_mtime > fh.stat().st_mtime:
+                        continue
                 fh_data[fh_name] = FoilHole(
                     fh_name,
                     fh,
