@@ -124,7 +124,7 @@ class EPUTracker:
                             if p.stem in cmic:
                                 num_parts = np
                                 break
-                        exposures.append((p, num_parts))
+                        exposures.append((p, {"particles": num_parts}))
                 if fh_data.get(fh_name):
                     if (
                         fh_data[fh_name].foil_hole_img.stat().st_mtime
