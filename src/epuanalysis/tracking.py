@@ -25,6 +25,10 @@ class GridSquare(NamedTuple):
     grid_square_img: pathlib.Path
     foil_holes: List[FoilHole]
 
+class StarColumns(NamedTuple):
+    counters: List[str]
+    sums: List[str]
+
 
 class EPUTracker:
     def __init__(
@@ -32,32 +36,32 @@ class EPUTracker:
         basepath: pathlib.Path,
         epudir: pathlib.Path,
         suffix: str = "",
-        starfile: Optional[pathlib.Path] = None,
-        column: str = "",
+        starfiles: Optional[Dict[pathlib.Path, StarColumns]] Optional[pathlib.Path] = None,
+        # column: str = "",
         atlas: str = "",
     ):
         self.basepath = basepath
         self.epudir = epudir
         self.suffix = suffix
-        self.starfile = starfile
-        self.column = column
+        self.starfiles = starfiles
+        # self.column = column
         self.atlas = atlas
         self.outdir = self.basepath / "EPU_analysis"
         self.counted_micrographs = Counter([])
 
         self.outdir.mkdir(exist_ok=True)
-        self.settings = self.basepath / "EPU_analysis" / "settings.dat"
-        self.epuout = self.basepath / "EPU_analysis"
-        self.star_dir = self.basepath / "EPU_analysis" / "star"
+        # self.settings = self.basepath / "EPU_analysis" / "settings.dat"
+        # self.epuout = self.basepath / "EPU_analysis"
+        # self.star_dir = self.basepath / "EPU_analysis" / "star"
         # save settings to disk
-        with self.settings.open("w") as sf:
-            sf.write("Tracking settings\n")
-            if self.starfile:
-                sf.write(f"Star: {self.basepath / self.starfile}\n")
-            sf.write(f"EPU: {self.epudir}\n")
-            sf.write(f"Column: {self.column}\n")
-            sf.write(f"Suffix: {self.suffix}\n")
-            sf.write(f"Atlas: {self.atlas}\n")
+        # with self.settings.open("w") as sf:
+        #     sf.write("Tracking settings\n")
+        #     if self.starfile:
+        #         sf.write(f"Star: {self.basepath / self.starfile}\n")
+        #     sf.write(f"EPU: {self.epudir}\n")
+        #     sf.write(f"Column: {self.column}\n")
+        #     sf.write(f"Suffix: {self.suffix}\n")
+        #     sf.write(f"Atlas: {self.atlas}\n")
         # (self.outdir / "star").mkdir()
 
     @staticmethod
