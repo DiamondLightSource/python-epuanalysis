@@ -4,6 +4,7 @@ import xmltodict
 
 from rich.pretty import pprint
 
+
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", help="Path to XML file", dest="xml_file")

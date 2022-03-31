@@ -101,7 +101,9 @@ class InspectorFrame(_BaseFrame):
         self._refresh_list("foilholes", [fh.name for fh in self._square.foil_holes])
         self._refresh_list("micrographs", [p[0] for p in self._foilhole.exposures])
 
-        self.children["atlas_inspector"] = AtlasInspectorFrame("Atlas view", self._atlas, self._image_scale["square"], self._square.name)
+        self.children["atlas_inspector"] = AtlasInspectorFrame(
+            "Atlas view", self._atlas, self._image_scale["square"], self._square.name
+        )
 
     def _select_square(self, evt):
         try:
@@ -114,9 +116,14 @@ class InspectorFrame(_BaseFrame):
             )
         except tk.TclError:
             return
-        self.update(grid_square=self._image_scale["square"], grid_square_name=self._square.name)
+        self.update(
+            grid_square=self._image_scale["square"], grid_square_name=self._square.name
+        )
         self.draw_scale(
-            self._image_scale["square"], "img_square", entry="entry_square", reset_entry="foilholes"
+            self._image_scale["square"],
+            "img_square",
+            entry="entry_square",
+            reset_entry="foilholes",
         )
         self._refresh_list("foilholes", [fh.name for fh in self._square.foil_holes])
 
@@ -160,7 +167,9 @@ class InspectorFrame(_BaseFrame):
             )
         except tk.TclError:
             return
-        self.draw_scale(self._image_scale["micrograph"], "img_micrograph", entry="entry_micrograph")
+        self.draw_scale(
+            self._image_scale["micrograph"], "img_micrograph", entry="entry_micrograph"
+        )
 
     def _refresh_list(self, key: str, items: list):
         for i in items:
@@ -178,8 +187,8 @@ class InspectorFrame(_BaseFrame):
         width, height = load.size
         ratio = width / height
         load = load.resize(
-             (cls._grid[varname].size[0], int(cls._grid[varname].size[0] / ratio)),
-             Image.ANTIALIAS,
+            (cls._grid[varname].size[0], int(cls._grid[varname].size[0] / ratio)),
+            Image.ANTIALIAS,
         )
         render = ImageTk.PhotoImage(load)
         cls.vars[varname] = tk.Label(cls.frame, image=render)
@@ -208,6 +217,7 @@ class InspectorFrame(_BaseFrame):
                     (curr_scale.cx, curr_scale.cy), scale_shift=1, target_tag=k
                 )
                 abv._frame.draw_scale(abv, abv.name, img_override=iov)
+
 
 class AtlasInspectorFrame(_BaseFrame):
     def __init__(
@@ -240,15 +250,13 @@ class AtlasInspectorFrame(_BaseFrame):
                 tile_scale = ImageScale(
                     tile,
                     name="tile",
-                    below={
-                        grid_square_name: grid_square
-                    },
+                    below={grid_square_name: grid_square},
                     frame=self,
                 )
                 break
 
         with mrcfile.open(self._atlas.with_suffix(".mrc")) as mrc:
-            self._atlas_dims = mrc.data.shape        
+            self._atlas_dims = mrc.data.shape
         self._image_scale: Dict[str, ImageScale] = {
             "atlas": ImageScale(
                 self._atlas,
@@ -270,7 +278,9 @@ class AtlasInspectorFrame(_BaseFrame):
 
         # InspectorFrame.draw_scale()
 
-    def update(self, grid_square: Optional[ImageScale] = None, grid_square_name: str = ""):
+    def update(
+        self, grid_square: Optional[ImageScale] = None, grid_square_name: str = ""
+    ):
         if grid_square:
             gs_coords = (grid_square.cx, grid_square.cy)
 
@@ -281,9 +291,7 @@ class AtlasInspectorFrame(_BaseFrame):
                     tile_scale = ImageScale(
                         tile,
                         name="tile",
-                        below={
-                            grid_square_name: grid_square
-                        },
+                        below={grid_square_name: grid_square},
                         frame=self,
                     )
                     break
@@ -299,7 +307,6 @@ class AtlasInspectorFrame(_BaseFrame):
                 "tile": tile_scale,
             }
 
-
     def draw_scale(
         cls,
         imscale: ImageScale,
@@ -313,8 +320,8 @@ class AtlasInspectorFrame(_BaseFrame):
         width, height = load.size
         ratio = width / height
         load = load.resize(
-             (cls._grid[varname].size[0], int(cls._grid[varname].size[0] / ratio)),
-             Image.ANTIALIAS,
+            (cls._grid[varname].size[0], int(cls._grid[varname].size[0] / ratio)),
+            Image.ANTIALIAS,
         )
 
         render = ImageTk.PhotoImage(load)

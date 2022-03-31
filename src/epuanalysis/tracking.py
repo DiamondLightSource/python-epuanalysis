@@ -44,7 +44,7 @@ class EPUTracker:
         self.atlas = atlas
         self.outdir = self.basepath / "EPU_analysis"
         self.counted_micrographs = Counter([])
-     
+
         self.outdir.mkdir(exist_ok=True)
         self.settings = self.basepath / "EPU_analysis" / "settings.dat"
         self.epuout = self.basepath / "EPU_analysis"
@@ -126,7 +126,10 @@ class EPUTracker:
                                 break
                         exposures.append((p, num_parts))
                 if fh_data.get(fh_name):
-                    if fh_data[fh_name].foil_hole_img.stat().st_mtime > fh.stat().st_mtime:
+                    if (
+                        fh_data[fh_name].foil_hole_img.stat().st_mtime
+                        > fh.stat().st_mtime
+                    ):
                         continue
                 fh_data[fh_name] = FoilHole(
                     fh_name,

@@ -22,7 +22,7 @@ class ImageScale:
         detector_dimensions: Optional[Tuple[int, int]] = None,
         above: Optional[Dict[Any, ImageScale]] = None,
         below: Optional[Dict[Any, ImageScale]] = None,
-        frame = None,
+        frame=None,
         flip: Tuple[bool, bool] = (False, False),
     ):
         self.name = name or image_path
@@ -47,7 +47,7 @@ class ImageScale:
         with Image.open(self.image) as im:
             self.xextent = im.size[0]
             self.yextent = im.size[1]
-        
+
         if spacing and centre and detector_dimensions:
             self._detector_dimensions = detector_dimensions
             self.spacing = spacing * (detector_dimensions[0] / self.xextent)
@@ -56,13 +56,20 @@ class ImageScale:
         else:
             xd = self.retrieve_xml_data()
             if not detector_dimensions:
-                readoutarea = xd["microscopeData"]["acquisition"]["camera"]["ReadoutArea"]
-                detector_dimensions = (int(readoutarea["a:width"]), int(readoutarea["a:height"]))
+                readoutarea = xd["microscopeData"]["acquisition"]["camera"][
+                    "ReadoutArea"
+                ]
+                detector_dimensions = (
+                    int(readoutarea["a:width"]),
+                    int(readoutarea["a:height"]),
+                )
             self._detector_dimensions = detector_dimensions
-            self.spacing = float(xd["SpatialScale"]["pixelSize"]["x"]["numericValue"]) * (self._detector_dimensions[0] / self.xextent)
+            self.spacing = float(
+                xd["SpatialScale"]["pixelSize"]["x"]["numericValue"]
+            ) * (self._detector_dimensions[0] / self.xextent)
             self.cx = float(xd["microscopeData"]["stage"]["Position"]["X"])
             self.cy = float(xd["microscopeData"]["stage"]["Position"]["Y"])
-        
+
         self.pcx: int = self.xextent // 2
         self.pcy: int = self.yextent // 2
 
@@ -155,15 +162,31 @@ class ImageScale:
             im.convert("RGB")
             d = ImageDraw.Draw(im)
 
-            half_square_width = int(0.5*(self.spacing/scale.spacing) * self.xextent)
+            half_square_width = int(0.5 * (self.spacing / scale.spacing) * self.xextent)
 
-            ulx = (-pix_coords[0] + half_square_width + scale.xextent) if scale._flip[0] else pix_coords[0] - half_square_width
-            uly = (-pix_coords[1] + half_square_width + scale.yextent) if scale._flip[1] else pix_coords[1] - half_square_width
+            ulx = (
+                (-pix_coords[0] + half_square_width + scale.xextent)
+                if scale._flip[0]
+                else pix_coords[0] - half_square_width
+            )
+            uly = (
+                (-pix_coords[1] + half_square_width + scale.yextent)
+                if scale._flip[1]
+                else pix_coords[1] - half_square_width
+            )
             upper_left = (ulx, uly)
-            lrx = (-pix_coords[0] - half_square_width + scale.xextent) if scale._flip[0] else pix_coords[0] + half_square_width
-            lry = (-pix_coords[1] - half_square_width + scale.yextent) if scale._flip[1] else pix_coords[1] + half_square_width
+            lrx = (
+                (-pix_coords[0] - half_square_width + scale.xextent)
+                if scale._flip[0]
+                else pix_coords[0] + half_square_width
+            )
+            lry = (
+                (-pix_coords[1] - half_square_width + scale.yextent)
+                if scale._flip[1]
+                else pix_coords[1] + half_square_width
+            )
             lower_right = (lrx, lry)
-          
+
             d.rectangle(
                 [upper_left, lower_right],
                 outline="red",

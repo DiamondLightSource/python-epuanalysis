@@ -90,11 +90,11 @@ def tk_image(
     width, height = load.size
     ratio = width / height
     load = load.resize(
-         (
-             imlocations[imscale.name].size[0],
-             int(imlocations[imscale.name].size[0] / ratio),
-         ),
-         Image.ANTIALIAS,
+        (
+            imlocations[imscale.name].size[0],
+            int(imlocations[imscale.name].size[0] / ratio),
+        ),
+        Image.ANTIALIAS,
     )
     render = ImageTk.PhotoImage(load)
     label = tk.Label(frame, image=render)

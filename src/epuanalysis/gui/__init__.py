@@ -1,6 +1,7 @@
 from functools import singledispatchmethod
 from typing import Any, Dict
 
+
 class _BaseFrame:
     def __init__(self, title: str):
         self.title = title
@@ -10,8 +11,7 @@ class _BaseFrame:
     @singledispatchmethod
     def add_component(self, comp):
         raise NotImplementedError(f"add_component not implemented for {comp}")
-    
+
     def update(self, **kwargs):
         for ch in self.children.values():
             ch.update(**kwargs)
-            

@@ -84,7 +84,9 @@ class StartupFrame(_BaseFrame):
             atlas=Path(self.vars["atlas"].get()),
         )
         data = tracker.track()["squares_all"]
-        self.children["inspector"] = InspectorFrame("EPU analysis", data=data, atlas=Path(self.vars["atlas"].get()))
+        self.children["inspector"] = InspectorFrame(
+            "EPU analysis", data=data, atlas=Path(self.vars["atlas"].get())
+        )
 
     @staticmethod
     def _load_options() -> dict:
@@ -97,9 +99,7 @@ class StartupFrame(_BaseFrame):
         return res
 
     def _dump_options(self):
-        settings = {
-            k: self.vars[k].get() for k in ("epu_dir", "suffix", "atlas")
-        }
+        settings = {k: self.vars[k].get() for k in ("epu_dir", "suffix", "atlas")}
         if not Path("./EPU_analysis").exists():
             Path("./EPU_analysis").mkdir()
         with open("./EPU_analysis/startup.yaml", "w") as opts:
