@@ -44,19 +44,8 @@ class EPUTracker:
         self.atlas = atlas
         self.outdir = self.basepath / "EPU_analysis"
         self.counted_micrographs = Counter([])
-        if self.outdir.is_dir():
-            print(f"Directory EPU_analysis already found in {self.basepath}; removing")
-
-            def _remove_nonempty(dir_for_rm: pathlib.Path):
-                for element in dir_for_rm.glob("*"):
-                    if element.is_dir():
-                        _remove_nonempty(element)
-                    else:
-                        element.unlink()
-                dir_for_rm.rmdir()
-
-            _remove_nonempty(self.outdir)
-        self.outdir.mkdir()
+     
+        self.outdir.mkdir(exist_ok=True)
         self.settings = self.basepath / "EPU_analysis" / "settings.dat"
         self.epuout = self.basepath / "EPU_analysis"
         self.star_dir = self.basepath / "EPU_analysis" / "star"
@@ -69,7 +58,7 @@ class EPUTracker:
             sf.write(f"Column: {self.column}\n")
             sf.write(f"Suffix: {self.suffix}\n")
             sf.write(f"Atlas: {self.atlas}\n")
-        (self.outdir / "star").mkdir()
+        # (self.outdir / "star").mkdir()
 
     @staticmethod
     def _get_gs(mic: pathlib.Path) -> str:

@@ -60,7 +60,7 @@ class AtlasFrame(GUIFrame):
             below={
                 inspector._current_grid_square_scale.image: inspector._current_grid_square_scale
             },
-            detector_dimensions=(2048, 2048),
+            detector_dimensions=(4005, 4005),
             frame=self,
             flip=(False, False),
         )
@@ -76,7 +76,7 @@ class AtlasFrame(GUIFrame):
                         below={
                             inspector._current_grid_square_scale.image: inspector._current_grid_square_scale
                         },
-                        detector_dimensions=(2048, 2048),
+                        detector_dimensions=(2880, 2046),
                         frame=self,
                         flip=(False, False),
                     )
@@ -394,6 +394,7 @@ class Inspector(GUIFrame):
             width, height = load.size
             ratio = width / height
             load = load.resize((400, int(400 / ratio)), Image.ANTIALIAS)
+        load = img
         render = ImageTk.PhotoImage(load)
         self._entries[img_name] = tk.Label(self.frame, image=render)
         self._entries[img_name].image = render
@@ -417,7 +418,7 @@ class Inspector(GUIFrame):
         ].grid_square_img
         self._current_grid_square = value
         self._current_grid_square_scale = ImageScale(
-            Path(imgpath), name="img_square", detector_dimensions=(2048, 2048)
+            Path(imgpath), name="img_square", detector_dimensions=(2880, 2046)
         )
         self.add_scale(self._current_grid_square_scale, (0, 395))
         self.draw_scale(
@@ -466,7 +467,7 @@ class Inspector(GUIFrame):
             above={
                 self._current_grid_square_scale.image: self._current_grid_square_scale
             },
-            detector_dimensions=(2048, 2048),
+            detector_dimensions=(2880, 2046),
             flip=(True, True),
         )
         self.add_scale(self._current_foil_hole_scale, (432, 395))
@@ -498,7 +499,7 @@ class Inspector(GUIFrame):
             Path(imgpath),
             name="img_mic",
             above={self._current_foil_hole_scale.image: self._current_foil_hole_scale},
-            detector_dimensions=(2048, 2048),
+            detector_dimensions=(2880, 2046),
         )
 
         self.add_scale(mic_scale, (862, 395))

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import mrcfile
-import xml.etree.ElementTree as ET
+import xmltodict
 
 from functools import lru_cache
 from pathlib import Path
@@ -35,31 +35,34 @@ class ImageScale:
         if above:
             self.above.update(above)
             for sc in self.above.values():
-                sc.below.update({image_path: self})
+                sc.below.update({self.name: self})
 
         self.below = {}
         if below:
             self.below.update(below)
             for sc in self.below.values():
-                sc.above.update({image_path: self})
+                sc.above.update({self.name: self})
 
         self.image = image_path
         with Image.open(self.image) as im:
             self.xextent = im.size[0]
             self.yextent = im.size[1]
-        if not detector_dimensions:
-            try:
-                with mrcfile.open(self.image.with_suffix(".mrc")) as im:
-                    detector_dimensions = im.data.shape
-            except FileNotFoundError:
-                detector_dimensions = (self.xextent, self.yextent)
-        self._detector_dimensions = detector_dimensions
-        if spacing and centre:
+        
+        if spacing and centre and detector_dimensions:
+            self._detector_dimensions = detector_dimensions
             self.spacing = spacing * (detector_dimensions[0] / self.xextent)
             self.cx = centre[0]
             self.cy = centre[1]
         else:
-            self.retrieve_xml_data()
+            xd = self.retrieve_xml_data()
+            if not detector_dimensions:
+                readoutarea = xd["microscopeData"]["acquisition"]["camera"]["ReadoutArea"]
+                detector_dimensions = (int(readoutarea["a:width"]), int(readoutarea["a:height"]))
+            self._detector_dimensions = detector_dimensions
+            self.spacing = float(xd["SpatialScale"]["pixelSize"]["x"]["numericValue"]) * (self._detector_dimensions[0] / self.xextent)
+            self.cx = float(xd["microscopeData"]["stage"]["Position"]["X"])
+            self.cy = float(xd["microscopeData"]["stage"]["Position"]["Y"])
+        
         self.pcx: int = self.xextent // 2
         self.pcy: int = self.yextent // 2
 
@@ -100,57 +103,19 @@ class ImageScale:
     def add_below(self, below: Dict[Any, ImageScale]):
         self.below.update(below)
         for sc in below.values():
-            sc.above.update({self.image: self})
+            sc.above.update({self.name: self})
 
     def add_above(self, above: Dict[Any, ImageScale]):
         self.above.update(above)
         for sc in above.values():
-            sc.below.update({self.image: self})
+            sc.below.update({self.name: self})
 
     @lru_cache(maxsize=1)
-    def retrieve_xml_data(self):
-        ns = {
-            "p": "http://schemas.datacontract.org/2004/07/Applications.Epu.Persistence",
-            "system": "http://schemas.datacontract.org/2004/07/System",
-            "so": "http://schemas.datacontract.org/2004/07/Fei.SharedObjects",
-            "g": "http://schemas.datacontract.org/2004/07/System.Collections.Generic",
-            "s": "http://schemas.datacontract.org/2004/07/Fei.Applications.Common.Services",
-            "a": "http://schemas.datacontract.org/2004/07/Fei.Types",
-        }
-        xml_path = self.image.with_suffix(".xml")
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        stage_position_X = root.find(
-            "so:microscopeData/so:stage/so:Position/so:X", ns
-        ).text
-        stage_position_Y = root.find(
-            "so:microscopeData/so:stage/so:Position/so:Y", ns
-        ).text
-
-        pixel_size = root.find(
-            "so:SpatialScale/so:pixelSize/so:x/so:numericValue", ns
-        ).text
-
-        image_shift_x = root.find(
-            "so:microscopeData/so:optics/so:ImageShift/a:_x", ns
-        ).text
-        image_shift_y = root.find(
-            "so:microscopeData/so:optics/so:ImageShift/a:_y", ns
-        ).text
-        beam_shift_x = root.find(
-            "so:microscopeData/so:optics/so:BeamShift/a:_x", ns
-        ).text
-        beam_shift_y = root.find(
-            "so:microscopeData/so:optics/so:BeamShift/a:_y", ns
-        ).text
-        beam_diameter = root.find(
-            "so:microscopeData/so:optics/so:BeamDiameter", ns
-        ).text
-
-        self.spacing = float(pixel_size) * (self._detector_dimensions[0] / self.xextent)
-        self.cx = float(stage_position_X)
-        self.cy = float(stage_position_Y)
+    def retrieve_xml_data(self) -> dict:
+        with open(self.image.with_suffix(".xml"), "r") as xf:
+            content = xf.read()
+            xd = xmltodict.parse(content)["MicroscopeImage"]
+        return xd
 
     def get_pixel(self, coords: Tuple[float, float]) -> Tuple[int, int]:
         xpix = (-coords[0] + self.cx) // self.spacing

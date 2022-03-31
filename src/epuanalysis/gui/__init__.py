@@ -11,7 +11,7 @@ class _BaseFrame:
     def add_component(self, comp):
         raise NotImplementedError(f"add_component not implemented for {comp}")
     
-    def update(self):
+    def update(self, **kwargs):
         for ch in self.children.values():
-            ch.update()
+            ch.update(**kwargs)
             
